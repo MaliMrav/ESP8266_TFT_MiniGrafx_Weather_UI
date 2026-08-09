@@ -5,8 +5,17 @@ site_url: https://malimrav.github.io/Telemetry/
 theme:
   name: material
 
+extra_css:
+  - stylesheets/extra.css
+
 markdown_extensions:
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 nav:
   - Home: README.md
@@ -34,4 +43,3 @@ nav:
       - Sprint Gamma: roadmap/Sprint_Gamma.md
       - Sprint Delta: roadmap/Sprint_Delta.md
       - Sprint Epsilon: roadmap/Sprint_Epsilon.md
-

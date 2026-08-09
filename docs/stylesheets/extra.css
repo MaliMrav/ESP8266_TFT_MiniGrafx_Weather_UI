@@ -1,0 +1,5 @@
+/* Style preprocessor directives (#define, #undef) as normal code text */
+.highlight .cp {
+  color: var(--md-code-fg-color);
+  font-style: normal;
+}

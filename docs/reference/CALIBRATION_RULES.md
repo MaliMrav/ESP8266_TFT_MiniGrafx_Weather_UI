@@ -46,6 +46,14 @@ Calibration is **completely bypassed** and the system goes straight to WeatherSc
 #undef CFG_HAS_CAPACITIVE_TOUCH
 #define CFG_HAS_CAPACITIVE_TOUCH false
 ```
+```cpp
+bool enabled = true;
+
+if (enabled)
+{
+    Serial.println("Hello");
+}
+```
 
 **Behavior:**
 - First boot: Enters calibration mode (no saved calibration)
