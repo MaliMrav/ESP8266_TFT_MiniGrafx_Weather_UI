@@ -20,25 +20,32 @@ But screen navigation is only one possible consequence of an interaction.
 
 The same input event might instead:
 
-* scroll through a menu
-* select an item
-* change a displayed value
-* toggle a presentation format
-* enter a configuration mode
-* reset the device
-* enter Wi-Fi access-point mode
-* request an OTA update
-* restore factory defaults
+- scroll through a menu
+- select an item
+- change a displayed value
+- toggle a presentation format
+- enter a configuration mode
+- reset the device
+- enter Wi-Fi access-point mode
+- request an OTA update
+- restore factory defaults
 
 This leads to a more fundamental question:
 
->**Who owns the interpretation of an interaction?**
+> **Who owns the interpretation of an interaction, and who owns the resulting operation?**
+
+The answer is not one universal owner.
+
+**Interpretation belongs to the appropriate context. Ownership follows scope.**
+
+---
 
 ## Input Is Not Navigation
 
-Telemetry deliberately separates the physical interaction from the meaning assigned to it.
+Telemetry deliberately separates physical interaction from the meaning assigned to it.
 
 The input pipeline is:
+
 ```text
 Physical Input
       │
@@ -49,147 +56,256 @@ Input Source
 InputManager
       │
       ▼
-Semantic InputEvent
-
+InputEvent
 ```
+
 At this point, the system knows what kind of interaction occurred.
 
 For example:
+
 ```text
 Touch at (120, 20)
         │
         ▼
 TAP + position
 ```
+
 Or:
+
 ```text
 Joystick moved upward
         │
         ▼
 SCROLL_UP
 ```
+
 Or:
+
 ```text
-Rotary encoder turned clockwise
+Rotary encoder turned
         │
         ▼
-INCREASE
-
+INCREASE / DECREASE
 ```
+
 The input system has normalised the physical interaction.
 
-It has not yet decided what the interaction means to the application.
+It has **not** yet decided what that interaction means to the application.
 
 That distinction is deliberate.
 
->**Input produces interaction. Context produces meaning.**
+> **Input produces interaction. Context produces meaning.**
+
+---
+
+## The Active Screen Is the Contextual Boundary
+
+Once an `InputEvent` reaches the active application context, the active Screen provides the context in which the interaction acquires meaning.
+
+A Screen therefore has three closely related responsibilities:
+
+```text
+Active Screen
+│
+├── Presentation
+│
+├── Zones
+│
+└── Local Context
+```
+
+The Screen knows what is currently being presented, which areas are interactive, and what semantic input means within that context.
+
+For example:
+
+```text
+TAP + position
+        │
+        ▼
+WeatherScreen
+        │
+        ▼
+Clock area?
+        │
+        ├── Yes → toggle clock presentation
+        │
+        └── No  → no local action
+```
+
+The clock-format change is local behaviour.
+
+It does not need a framework-wide `TOGGLE_TIME_FORMAT` action.
+
+Likewise, a future Solar Power screen might interpret:
+
+```text
+SCROLL_LEFT
+        │
+        ▼
+SolarPowerScreen
+        │
+        └── move historical graph to the previous interval
+```
+
+The generic input vocabulary does not need to know anything about solar power.
+
+This is what makes the framework extensible.
+
+---
 
 ## The Same Input Can Mean Different Things
 
 Consider:
+
 ```text
-SCROLL\_DOWN
+SCROLL_DOWN
 ```
+
 On a weather screen, it might mean:
+
 ```text
 SCROLL_DOWN
       │
       ▼
 WeatherScreen
       │
-      └── Move focus to the next area
+      └── move focus to the next area
 ```
-On the Control Panel menu:
+
+On the Control Panel:
+
 ```text
 SCROLL_DOWN
       │
       ▼
-ControlMenuPage
+ControlPanelScreen
       │
-      └── Select the next menu item
+      └── select the next menu item
 ```
+
 On an information page:
+
 ```text
 SCROLL_DOWN
       │
       ▼
 AboutPage
       │
-      └── Scroll the information
+      └── scroll the information
 ```
+
 The input action is the same.
 
 The interpretation is different.
 
-The context owns the meaning.
+That is not ambiguity.
 
-This is why application-specific meanings should not be placed directly into the generic input vocabulary.
+That is contextual interpretation.
 
-The input system should not produce:
+---
+
+## Three Possible Outcomes
+
+Once the active context interprets an `InputEvent`, there are three important architectural outcomes:
+
 ```text
-TOGGLE\_TIME\_FORMAT
-OPEN\_ABOUT\_PAGE
-RESET\_FACTORY\_DEFAULTS
-ENTER\_AP\_MODE
-START\_OTA
-```
-Those are not generic input actions.
-
-They are **contextual interpretations of input actions**.
-
-The input system may produce:
-```text
-TAP
-LONG\_PRESS
-SELECT
-BACK
-SCROLL\_UP
-SCROLL\_DOWN
-INCREASE
-DECREASE
-```
-The appropriate context decides what those actions mean.
-
-## Navigation Is Only One Possible Outcome
-
-A semantic ```InputEvent``` may be handled at several levels.
-```text
+                         Active Screen
+                              │
                          InputEvent
                               │
                               ▼
-                  ┌─────────────────────┐
-                  │   System Context    │
-                  │                     │
-                  │ System-level        │
-                  │ interpretation?     │
-                  └──────────┬──────────┘
-                             │ No
-                             ▼
-                  ┌─────────────────────┐
-                  │   ScreenManager     │
-                  │                     │
-                  │ Screen navigation?  │
-                  └──────────┬──────────┘
-                             │ No
-                             ▼
-                  ┌─────────────────────┐
-                  │    Active Screen    │
-                  │                     │
-                  │ In-screen action?   │
-                  └──────────┬──────────┘
-                             │
-                             ▼
-                       Active Page
+                  contextual interpretation
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+       Local behaviour   ScreenIntent     SystemIntent
+             │                │                │
+             ▼                ▼                ▼
+        Screen state     ScreenManager    System Context
 ```
-The event is not automatically a request to change screens.
 
-The receiving context must first determine whether it owns the interaction.
+These outcomes have deliberately different scopes.
+
+### Local behaviour
+
+The interaction remains within the active Screen or Page.
+
+Examples:
+
+- toggle clock presentation
+- change a displayed format
+- move menu selection
+- scroll information
+- adjust a value
+- capture a calibration point
+
+No navigation contract is required.
+
+### ScreenIntent
+
+The interaction means that the user wants to move between Screens.
+
+The active context may express that intent, but it does not execute the transition.
+
+`ScreenManager` owns the transition.
+
+### SystemIntent
+
+The interaction means something that affects the device or system beyond the current Screen.
+
+Examples include:
+
+- reset
+- factory reset
+- enter AP mode
+- request OTA update
+- enter recovery mode
+
+These belong to a system-level owner rather than the visible Screen.
+
+---
+
+## Navigation Is Only One Possible Interpretation
+
+A semantic `InputEvent` therefore follows this conceptual path:
+
+```text
+InputEvent
+      │
+      ▼
+Active Screen / Context
+      │
+      │ What does it mean here?
+      ▼
+Interpretation
+      │
+      ├── Local behaviour
+      │       └── Screen state / Page state
+      │
+      ├── ScreenIntent
+      │       └── ScreenManager
+      │
+      └── SystemIntent
+              └── System Context
+```
+
+This is the refinement that matters most for the architecture.
+
+> **ScreenManager owns navigation, but navigation is only one possible interpretation of an input event.**
+
+The Screen is therefore not a miniature `ScreenManager`.
+
+It interprets interaction in context and may express intent when that meaning crosses an architectural boundary.
+
+---
 
 ## System-Level Interaction
 
 Some interactions have nothing to do with the user interface currently being displayed.
 
 For example, a special sequence from a keyboard, button matrix, or other input device might request:
+
 ```text
 Key Sequence
       │
@@ -201,10 +317,13 @@ System Context
       ├── Enter Wi-Fi AP mode
       └── Request OTA update
 ```
+
 This is conceptually similar to system-level keyboard combinations such as:
+
 ```text
 CTRL + ALT + DEL
 ```
+
 The physical keys are not themselves a request to reboot.
 
 The system interprets the combination within a broader context.
@@ -212,93 +331,86 @@ The system interprets the combination within a broader context.
 The same principle applies to embedded systems.
 
 A hidden button sequence might mean:
+
 ```text
-LONG_PRESS
-      │
-      ▼
+InputEvent sequence
+        │
+        ▼
 System Context
-      │
-      └── Enter recovery mode
+        │
+        └── Enter recovery mode
 ```
-Or:
-```text
-SELECT + BACK
-      │
-      ▼
-System Context
-      │
-      └── Restore factory defaults
-```
+
 These interactions should not be routed through a screen merely because a screen happens to be visible.
 
 The active screen is not necessarily the owner of every input event.
 
+---
+
 ## Screen-Level Navigation
 
-If the interaction is relevant to changing the active screen, that responsibility belongs to ```ScreenManager```.
+If an interaction is interpreted as a request to change the active Screen, the responsibility divides cleanly:
 
-The ownership model is:
 ```text
 InputEvent
       │
       ▼
-ScreenManager
+Active Screen / Context
       │
-      ├── Screen-level navigation?
-      │       │
-      │       ├── Yes
-      │       │    └── Transition to another Screen
-      │       │
-      │       └── No
+      │ contextual interpretation
+      ▼
+ScreenIntent
       │
       ▼
-Active Screen
+ScreenManager
+      │
+      ▼
+Screen transition
 ```
-```ScreenManager``` owns:
 
-* which screen is active
-* leaving the current screen
-* activating the next screen
-* entering the new screen
-* screen-level lifecycle transitions
+The active Screen decides that the interaction means:
 
-The active screen does not directly replace itself with another screen.
+> "The user wants to leave this context and move to another Screen."
+
+It does **not** manipulate `ScreenManager` directly.
+
+`ScreenManager` owns:
+
+- which Screen is active
+- leaving the current Screen
+- activating the next Screen
+- entering the new Screen
+- screen-level lifecycle transitions
 
 This preserves the architectural boundary:
 
->**Screens may express intent. ScreenManager owns screen transitions.**
+> **The context interprets. The Screen may express navigation intent. `ScreenManager` executes the transition.**
+
+---
 
 ## In-Screen Interaction
 
-If the event does not represent screen-level navigation, the active screen receives it.
-```text
-InputEvent
-      │
-      ▼
-ScreenManager
-      │
-      └── Not screen navigation
-              │
-              ▼
-        Active Screen
-              │
-              ▼
-        Active Page
-```
-The active screen may then interpret the interaction locally.
+If the event does not represent a system operation or screen-level navigation, it remains within the active context.
 
 For example:
+
 ```text
-TAP + position
+InputEvent
       │
       ▼
 WeatherScreen
       │
-      └── Determine which focus area was tapped
+      ├── TAP + clock position
+      │       └── toggle clock presentation
+      │
+      └── SCROLL_DOWN
+              └── local interpretation
 ```
+
 Or:
+
 ```text
-SCROLL_DOWN
+InputEvent
       │
       ▼
 ControlPanelScreen
@@ -306,26 +418,59 @@ ControlPanelScreen
       ▼
 ControlMenuPage
       │
-      └── Select the next item
+      └── SCROLL_DOWN
+              └── select the next item
 ```
-Or:
-```text
-TAP + position
-      │
-      ▼
-WeatherScreen
-      │
-      └── Time area
-              │
-              └── Change time presentation
-```
+
 The input event remains generic.
 
-The application context gives it meaning.
+The Screen and its local context give it meaning.
+
+---
+
+## Why Not Create a Global LocalAction Vocabulary?
+
+A tempting design would be to create a separate action enum for every Screen:
+
+```text
+WeatherAction
+SolarPowerAction
+ControlPanelAction
+CalibrationAction
+ConnectivityAction
+...
+```
+
+That would create a second application-specific input language and force the framework to understand details belonging to individual applications.
+
+It is unnecessary.
+
+The framework already provides the semantic input vocabulary:
+
+```text
+TAP
+SELECT
+SCROLL_UP
+SCROLL_DOWN
+INCREASE
+DECREASE
+...
+```
+
+The active context interprets those actions directly.
+
+Only when the resulting meaning crosses an architectural boundary do we introduce an explicit contract such as `ScreenIntent` or `SystemIntent`.
+
+> **Local meaning stays local. Meaning that crosses a responsibility boundary gets an explicit contract.**
+
+This keeps the framework vocabulary small and reusable.
+
+---
 
 ## The Ownership Contract
 
-The resulting contract is:
+The resulting architecture is:
+
 ```text
 Physical Input
       │
@@ -339,216 +484,255 @@ Input Source
               │
               ├── Normalise interaction
               ├── Queue event
-              └── Dispatch event
+              └── Deliver event
                       │
                       ▼
                  InputEvent
                       │
                       ▼
-             Application Context
+                Active Context
                       │
           ┌───────────┼───────────┐
           ▼           ▼           ▼
-       System      Screen       Active
-       Context     Manager      Screen
+       Local       Screen       System
+      behaviour    Intent       Intent
           │           │           │
           ▼           ▼           ▼
-       System      Screen       Page /
-       Action     Transition    Control
+      Screen /     Screen       System
+        Page       Manager       Context
 ```
+
 Each layer has a distinct responsibility.
 
 ### Input Source
 
 Answers:
 
->What physical interaction occurred?
+> What physical interaction occurred?
 
 Examples:
 
-* touch
-* button press
-* encoder movement
-* joystick movement
+- touch
+- button press
+- encoder movement
+- joystick movement
+- keyboard input
 
 ### InputManager
 
 Answers:
 
->How do we represent that interaction in a device-independent way?
+> How do we represent and transport that interaction independently of the physical device?
 
-It produces semantic ```InputEvent``` objects.
+It produces semantic `InputEvent` objects.
 
-### System Context
+### Active Context
 
 Answers:
 
->Is this interaction a system-level command?
+> What does this interaction mean here?
 
-Examples:
-
-* reset
-* recovery mode
-* AP mode
-* factory reset
-* OTA request
+It may produce local behaviour, a `ScreenIntent`, or a `SystemIntent` depending on scope and ownership.
 
 ### ScreenManager
 
 Answers:
 
->Does this interaction require changing the active screen?
+> How is a requested Screen transition executed?
 
-If so, it owns the transition.
+It owns Screen lifecycle and transitions.
 
-### Active Screen
+### System Context
 
 Answers:
 
->What does this interaction mean within the current screen?
+> What should happen when an interaction represents a system-level operation?
+
+Examples include reset, recovery, AP mode, factory reset and OTA operations.
 
 ### Active Page or Control
 
 Answers:
 
->What does this interaction mean within the current local context?
+> What does this interaction mean within this local area of the current Screen?
 
-## Why Not Let Screens Handle Everything?
+A Page or Control may participate in the contextual interpretation without becoming a framework-level input owner.
 
-A simpler design might send every event directly to the active screen:
+---
+
+## Why Not Let Screens Execute Navigation?
+
+A simpler design might allow:
+
 ```text
-InputEvent
-      │
-      ▼
-Active Screen
-```
-This appears straightforward.
-
-But it creates a problem.
-
-The active screen becomes responsible for understanding interactions that may not belong to it.
-
-For example:
-```text
-Factory Reset Sequence
-      │
-      ▼
 WeatherScreen
       │
-      └── Why am I responsible for this?
+      └── ScreenManager.show(ControlPanel)
 ```
-Or:
+
+This appears straightforward.
+
+But it gives the Screen direct knowledge of navigation infrastructure and the collection of available Screens.
+
+The dependency becomes:
+
 ```text
-Enter AP Mode
+WeatherScreen
       │
       ▼
-ControlPanelScreen
-      │
-      └── Is this a screen action or a system action?
+ScreenManager
 ```
-The screen becomes coupled to concerns outside its responsibility.
 
-This violates the principle:
+That is the wrong ownership direction.
 
->**One Responsibility Per Capability.**
+Instead:
 
-A screen should render and interpret interactions within its own application context.
+```text
+WeatherScreen
+      │
+      ▼
+ScreenIntent
+      │
+      ▼
+ScreenManager
+```
 
-It should not become the universal owner of system commands.
+The Screen expresses intent.
+
+The owner of navigation executes it.
+
+---
 
 ## Why Not Let InputManager Decide?
 
 The opposite design is equally problematic.
 
-If ```InputManager``` decides:
+If `InputManager` decides:
+
 ```text
 TAP at (120, 20)
       │
       └── Open About Page
 ```
+
 then the input system must understand:
 
-* the current screen
-* the current page
-* the screen layout
-* application-specific controls
-* system modes
+- the current Screen
+- the current Page
+- the Screen layout
+- application-specific controls
+- system modes
 
 The input system is no longer an input abstraction.
 
 It has become an application controller.
 
-That would violate:
+That violates the separation established by Sprint Delta.
 
->**Capabilities Before Hardware.**
-
-The input system should provide an input capability.
-
-It should not become the application.
+---
 
 ## The Deeper Principle
 
-The architecture therefore separates three distinct concerns:
+The architecture separates three questions:
+
 ```text
 1. Interaction
       │
       ▼
-What did the user physically do?
+What did the user do?
 
 2. Interpretation
       │
       ▼
 What does that interaction mean here?
 
-3. Action
+3. Ownership
       │
       ▼
-What should the system do as a result?
+Which scope is responsible for the resulting operation?
 ```
+
 For example:
+
 ```text
-Touch at (120, 20)
-      │
-      ▼
 TAP + position
       │
       ▼
-WeatherScreen interprets position
+WeatherScreen
       │
-      ▼
-Time presentation changes
+      ├── clock area
+      │      └── local behaviour
+      │
+      └── navigation control
+             └── ScreenIntent
 ```
-Or:
-```text
-Button sequence
-      │
-      ▼
-Semantic input events
-      │
-      ▼
-System Context interprets sequence
-      │
-      ▼
-Device resets
-```
-Or:
-```text
-Joystick moved upward
-      │
-      ▼
-SCROLL_UP
-      │
-      ▼
-ControlMenuPage interprets action
-      │
-      ▼
-Next menu item selected
-```
-The same input architecture supports all three.
 
-## The Result
+Or:
 
-The final architectural boundary is:
+```text
+Special key sequence
+      │
+      ▼
+System Context
+      │
+      └── SystemIntent
+```
+
+The resulting operation is then handled by the owner of that scope.
+
+This produces a simple architectural rule:
+
+> **Interpretation is contextual. Ownership follows scope. Execution belongs to the owner.**
+
+---
+
+## The Framework Test
+
+The architecture should remain valid if a completely new Screen is introduced.
+
+Imagine adding:
+
+```text
+SolarPowerScreen
+```
+
+with zones for:
+
+- solar production
+- household consumption
+- battery storage
+- grid export
+
+It may interpret:
+
+```text
+SCROLL_LEFT
+```
+
+as:
+
+```text
+Move historical graph backwards
+```
+
+while another Screen interprets the same input as something completely different.
+
+No change to `InputAction` is required.
+
+No global `SolarPowerAction` enum is required.
+
+The new Screen simply provides its own contextual interpretation.
+
+If adding a new application Screen requires modifying the generic input vocabulary, the abstraction boundary should be questioned.
+
+That is one of the tests that tells us whether Telemetry is behaving like a framework rather than a single-purpose weather application.
+
+---
+
+## The Final Model
+
+The complete interaction architecture is:
+
 ```text
 Physical Input
       │
@@ -559,76 +743,42 @@ Input Source
 InputManager
       │
       ▼
-Semantic InputEvent
+InputEvent
       │
       ▼
-Contextual Interpretation
+Active Screen / Context
       │
-      ├── System-level action
-      │
-      ├── Screen-level navigation
-      │
-      └── In-screen interaction
-              │
-              ▼
-          Active Page
+      │ contextual interpretation
+      ▼
+┌─────────────────────────────────────────┐
+│                                         │
+│  Local behaviour   ScreenIntent   SystemIntent
+│       │                 │               │
+│       ▼                 ▼               ▼
+│  Screen state      ScreenManager   System Context
+│                         │
+│                         ▼
+│                  Screen transition
+│                                         │
+└─────────────────────────────────────────┘
 ```
-The important lesson is not that ```ScreenManager``` owns every input event.
 
-It does not.
+This is the architectural answer to:
 
-The important lesson is:
+> **Who owns navigation?**
 
->**The owner of an interaction is determined by the context that gives the interaction meaning.**
+**ScreenManager owns screen-level navigation.**
 
-```ScreenManager``` owns screen transitions.
+But navigation is only one possible interpretation of an input event.
 
-The active screen owns in-screen interpretation.
+The active context interprets the event.
 
-Pages and controls own their local interaction.
+Local meaning remains local.
 
-The system context owns system-level commands.
+Screen-level meaning becomes `ScreenIntent`.
 
-InputManager owns none of these meanings.
+System-level meaning becomes `SystemIntent`.
 
-It only provides the common language through which they can be expressed.
+And each resulting operation is handled by the owner of its scope.
 
-## The Architectural Lesson
-
-Input abstraction is not about supporting every possible input device.
-
-It is about separating:
-
-How the interaction happened
-
-from:
-
-What the interaction means
-
-A touch screen, joystick, button matrix, rotary encoder, or keyboard may all produce different physical signals.
-
-The framework should not force the rest of the application to understand those differences.
-
-Instead:
-```text
-Different Physical Devices
-            │
-            ▼
-   Common Interaction Model
-            │
-            ▼
-     Contextual Meaning
-```
-This is why the input boundary exists.
-
-Not because Telemetry must support every input device immediately.
-
-But because the meaning of an interaction should not be permanently coupled to the mechanism that produced it.
-
->**Input is semantic.**
->
->**Meaning is contextual.**
->
->**Ownership belongs to the context that gives the interaction meaning.**
-
-That is the boundary.
+That separation is what allows the framework to grow without turning the input system into an application controller or every Screen into a navigation controller.
