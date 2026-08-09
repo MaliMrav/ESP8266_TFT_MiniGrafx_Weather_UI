@@ -7,7 +7,7 @@ const char* ControlMenuPage::title() const
     return "Control Panel";
 }
 
-void ControlMenuPage::onInput(const InputEvent& event)
+ScreenIntent ControlMenuPage::onInput(const InputEvent& event)
 {
     switch (event.action)
     {
@@ -24,6 +24,8 @@ void ControlMenuPage::onInput(const InputEvent& event)
         default:
             break;
     }
+
+    return ScreenIntent();
 }
 
 void ControlMenuPage::render(DisplayManager& display)

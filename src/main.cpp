@@ -9,6 +9,7 @@
 
 #include "screens/BootScreen.h"
 #include "screens/CalibrationScreen.h"
+#include "screens/control/ControlPanelScreen.h"
 #include "screens/WeatherScreen.h"
 
 #include "ui/ScreenManager.h"
@@ -34,9 +35,8 @@ ScreenManager screenManager;
 
 BootScreen bootScreen(display);
 WeatherScreen weatherScreen(display);
-CalibrationScreen calibrationScreen(
-    display,
-    touchController);
+CalibrationScreen calibrationScreen(display,touchController);
+ControlPanelScreen controlPanelScreen(display);
 
 OtaManager ota;
 MqttDataSource mqttData;
@@ -57,6 +57,7 @@ void setup()
         bootScreen,
         weatherScreen,
         calibrationScreen,
+        controlPanelScreen,
         ota,
         mqttData);
 }

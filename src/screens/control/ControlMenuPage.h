@@ -2,6 +2,7 @@
 
 #include "ControlPage.h"
 #include "ControlPageKind.h"
+#include "../../ui/ScreenIntent.h"
 
 class DisplayManager;
 
@@ -13,7 +14,7 @@ public:
 
     void render(DisplayManager& display) override;
 
-    void onInput(const InputEvent& event) override;
+    ScreenIntent onInput(const InputEvent& event) override;
 
     ControlPageKind selectedPage() const
     {

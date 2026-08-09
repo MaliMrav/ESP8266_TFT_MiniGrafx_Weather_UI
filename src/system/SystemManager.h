@@ -21,6 +21,7 @@ class ScreenManager;
 class BootScreen;
 class WeatherScreen;
 class CalibrationScreen;
+class ControlPanelScreen;
 class OtaManager;
 class IDataSource;
 
@@ -37,6 +38,7 @@ namespace SystemManager
         BootScreen&        bootScreen,
         WeatherScreen&     weatherScreen,
         CalibrationScreen& calibrationScreen,
+        ControlPanelScreen& controlPanelScreen,
         OtaManager&        ota,
         IDataSource&       dataSource);
 

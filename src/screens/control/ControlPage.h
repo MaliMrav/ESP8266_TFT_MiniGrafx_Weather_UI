@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../input/InputEvent.h"
+#include "../../ui/ScreenIntent.h"
 
 class DisplayManager;
 
@@ -22,5 +23,6 @@ public:
     virtual void render(DisplayManager& display) = 0;
 
     // Handle semantic input.
-    virtual void onInput(const InputEvent& event) = 0;
+    // Returns ScreenIntent to allow pages to express navigation intent.
+    virtual ScreenIntent onInput(const InputEvent& event) = 0;
 };

@@ -30,6 +30,7 @@ namespace
     BootScreen* s_bootScreen = nullptr;
     WeatherScreen* s_weatherScreen = nullptr;
     CalibrationScreen* s_calibrationScreen = nullptr;
+    ControlPanelScreen* s_controlPanelScreen = nullptr;
     OtaManager* s_ota = nullptr;
     IDataSource* s_dataSource = nullptr;
 
@@ -213,6 +214,7 @@ namespace SystemManager
         BootScreen&        bootScreen,
         WeatherScreen&     weatherScreen,
         CalibrationScreen& calibrationScreen,
+        ControlPanelScreen& controlPanelScreen,
         OtaManager&        ota,
         IDataSource&       dataSource)
     {
@@ -223,6 +225,7 @@ namespace SystemManager
         s_bootScreen = &bootScreen;
         s_weatherScreen = &weatherScreen;
         s_calibrationScreen = &calibrationScreen;
+        s_controlPanelScreen = &controlPanelScreen;
         s_ota        = &ota;
         s_dataSource = &dataSource;
 

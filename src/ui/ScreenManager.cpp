@@ -54,8 +54,26 @@ void ScreenManager::update()
 
 void ScreenManager::onInput(const InputEvent& event)
 {
-    if (currentScreen_)
+    if (!currentScreen_)
     {
-        currentScreen_->onInput(event);
+        return;
+    }
+
+    ScreenIntent intent = currentScreen_->onInput(event);
+
+    switch (intent.kind)
+    {
+        case ScreenIntentKind::NAVIGATE:
+            // Navigation target will be resolved by ScreenManager
+            // once the target Screen instance is available.
+            break;
+
+        case ScreenIntentKind::BACK:
+            // Back behaviour will be defined separately.
+            break;
+
+        case ScreenIntentKind::NONE:
+        default:
+            break;
     }
 }

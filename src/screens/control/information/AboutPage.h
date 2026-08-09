@@ -9,7 +9,8 @@ public:
 
     virtual void render(DisplayManager& display) override;
 
-    virtual void onInput(const InputEvent&)
+    virtual ScreenIntent onInput(const InputEvent&)
     {
+        return ScreenIntent();
     } // ignore input events, as this page currently has no interactive behaviour.
 };
