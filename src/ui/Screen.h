@@ -2,30 +2,19 @@
 
 // Screen is the base class for every screen in the framework.
 //
-// A screen owns its own rendering and input handling. The framework
-// calls enter() when a screen becomes active, leave() when it is
-// replaced, update() on a regular interval to redraw, and onInput()
-// when the InputManager dispatches an event.
+// Screens own their presentation, zones, and local contextual behaviour.
 //
-// Screens do not call each other directly. Navigation is expressed
-// by returning intent to ScreenManager (future) or by having
-// SystemManager observe screen state (current approach).
+// A Screen interprets InputEvents within its own context. An interaction
+// may result in local behaviour, a ScreenIntent, or other contextual
+// handling.
 //
-// To add a new screen: subclass Screen, override the relevant methods,
-// add a ScreenKind value, and register it with ScreenManager.
+// Screens do not perform screen transitions directly. When a Screen
+// determines that navigation is required, it expresses that request
+// through ScreenIntent. ScreenManager owns the resulting transition.
 
 #include "../input/InputEvent.h"
-
-enum class ScreenKind
-{
-    Generic,
-    Boot,
-    Weather,
-    Status,
-    Calibration,
-    ControlPanel,
-    ConnectivityPage
-};
+#include "ScreenKind.h"
+#include "ScreenIntent.h"
 
 class Screen
 {
@@ -37,9 +26,9 @@ public:
 
     virtual void update() = 0;
 
-    virtual void onInput(
-        const InputEvent& event)
+    virtual ScreenIntent onInput(const InputEvent& event)
     {
+        return ScreenIntent();
     }
 
     virtual ScreenKind kind() const

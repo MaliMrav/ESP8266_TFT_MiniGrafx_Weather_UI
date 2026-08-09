@@ -19,7 +19,8 @@ void ConnectivityPage::render(DisplayManager& display)
     display.commit();
 }
 
-void ConnectivityPage::onInput(const InputEvent&)
+ScreenIntent ConnectivityPage::onInput(const InputEvent&)
 {
     // MVP
+    return ScreenIntent();
 }

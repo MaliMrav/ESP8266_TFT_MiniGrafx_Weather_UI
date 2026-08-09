@@ -9,5 +9,5 @@ public:
 
     void render(DisplayManager& display) override;
 
-    void onInput(const InputEvent& event) override;
+    ScreenIntent onInput(const InputEvent& event) override;
 };

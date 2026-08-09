@@ -1,16 +1,17 @@
 #pragma once
 
-// ScreenManager owns the currently active screen and routes events to it.
+// ScreenManager owns screen-level navigation and screen transitions.
 //
-// Responsibilities:
-//   - activate a screen via activate(), calling leave() on the outgoing
-//     screen and enter() on the incoming one
-//   - set the appropriate TouchManager profile when the screen changes
-//   - forward update() and onInput() calls to the active screen
+// Screens do not manipulate ScreenManager directly. They express
+// navigation requests through ScreenIntent, which ScreenManager
+// interprets and executes.
 //
-// ScreenManager holds one screen at a time. Multi-screen navigation
-// and history are intentionally left to higher-level logic in SystemManager
-// or future screen transition helpers.
+// ScreenManager does not interpret the contextual meaning of InputEvents.
+// That responsibility belongs to the active Screen (or the appropriate
+// higher-level context for system-level behaviour).
+//
+// Navigation history and more advanced transition policies are
+// intentionally outside the current thin-slice implementation.
 
 #include "Screen.h"
 #include "../input/InputEvent.h"

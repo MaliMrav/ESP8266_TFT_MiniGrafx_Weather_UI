@@ -40,7 +40,7 @@ bool WeatherScreen::isClockArea(
            position.y < ScreenConfig::CLOCK_AREA_BOTTOM;
 }
 
-void WeatherScreen::onInput(const InputEvent& event)
+ScreenIntent WeatherScreen::onInput(const InputEvent& event)
 {
     DBG_RECORD(event);
 
@@ -64,6 +64,8 @@ void WeatherScreen::onInput(const InputEvent& event)
         default:
             break;
     }
+
+    return ScreenIntent();
 }
 
 void WeatherScreen::drawHeader()

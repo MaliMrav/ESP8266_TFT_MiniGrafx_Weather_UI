@@ -30,7 +30,7 @@ public:
     void leave() override;
     void update() override;
 
-    void onInput(const InputEvent& event) override;
+    ScreenIntent onInput(const InputEvent& event) override;
 
     ScreenKind kind() const override
     {

@@ -105,13 +105,13 @@ void CalibrationScreen::drawStatus()
         "BR " + String(calibrationData_.bottomRight.x) + "," + String(calibrationData_.bottomRight.y));
 }
 
-void CalibrationScreen::onInput(const InputEvent& event)
+ScreenIntent CalibrationScreen::onInput(const InputEvent& event)
 {
     if (event.action != InputAction::TAP ||
         !event.hasPosition ||
         step_ == COMPLETE)
     {
-        return;
+        return ScreenIntent();
     }
 
     capturePoint(event.position.x, event.position.y);
@@ -122,6 +122,7 @@ void CalibrationScreen::onInput(const InputEvent& event)
     }
 
     update();
+    return ScreenIntent();
 }
 
 void CalibrationScreen::capturePoint(int16_t x, int16_t y)

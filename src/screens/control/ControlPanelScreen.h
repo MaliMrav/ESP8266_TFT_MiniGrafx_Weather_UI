@@ -18,7 +18,7 @@ public:
 
     void activate(ControlPage& page);
 
-    void onInput(const InputEvent& event) override;
+    ScreenIntent onInput(const InputEvent& event) override;
 
     ScreenKind kind() const override
     {

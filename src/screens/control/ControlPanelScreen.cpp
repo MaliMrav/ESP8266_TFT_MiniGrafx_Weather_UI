@@ -27,7 +27,7 @@ void ControlPanelScreen::update()
     }
 }
 
-void ControlPanelScreen::onInput(const InputEvent& event)
+ScreenIntent ControlPanelScreen::onInput(const InputEvent& event)
 {
     if (activePage_)
     {
@@ -48,7 +48,7 @@ void ControlPanelScreen::onInput(const InputEvent& event)
                     break;
             }
 
-            return;
+            return ScreenIntent();
         }
     }
 
@@ -58,16 +58,16 @@ void ControlPanelScreen::onInput(const InputEvent& event)
         {
             // Already on the menu page, so leave Control Panel.
             // Screen-level navigation will be handled by ScreenManager.
+
+            return ScreenIntent();
         }
-        else
-        {
-            activePage_->onLeave();
-            activePage_ = &menuPage_;
-            activePage_->onEnter();
-        }
+
+        activePage_->onLeave();
+        activePage_ = &menuPage_;
+        activePage_->onEnter();
+
+        return ScreenIntent();
     }
-    else
-    {
-        // ScreenManager will return to Weather later.
-    }
+
+    return ScreenIntent();
 }
