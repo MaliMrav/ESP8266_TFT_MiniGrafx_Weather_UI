@@ -2,6 +2,26 @@
 
 #include "../touch/TouchManager.h"
 
+void ScreenManager::registerScreen(Screen* screen)
+{
+    if (screen && registryCount_ < MAX_SCREENS)
+    {
+        registry_[registryCount_++] = screen;
+    }
+}
+
+Screen* ScreenManager::resolve(ScreenKind kind)
+{
+    for (uint8_t i = 0; i < registryCount_; i++)
+    {
+        if (registry_[i]->kind() == kind)
+        {
+            return registry_[i];
+        }
+    }
+    return nullptr;
+}
+
 void ScreenManager::bindTouchManager(TouchManager* touchManager)
 {
     touchManager_ = touchManager;
@@ -25,7 +45,7 @@ void ScreenManager::activate(Screen* screen)
                 break;
 
             case ScreenKind::ControlPanel:
-                touchManager_->setProfile(TouchManager::Profile::Generic);
+                touchManager_->setProfile(TouchManager::Profile::ControlPanel);
                 break;
 
             case ScreenKind::Calibration:
@@ -64,13 +84,24 @@ void ScreenManager::onInput(const InputEvent& event)
     switch (intent.kind)
     {
         case ScreenIntentKind::NAVIGATE:
-            // Navigation target will be resolved by ScreenManager
-            // once the target Screen instance is available.
+        {
+            Screen* target = resolve(intent.target);
+            if (target)
+            {
+                activate(target);
+            }
             break;
+        }
 
         case ScreenIntentKind::BACK:
-            // Back behaviour will be defined separately.
+        {
+            Screen* weather = resolve(ScreenKind::Weather);
+            if (weather)
+            {
+                activate(weather);
+            }
             break;
+        }
 
         case ScreenIntentKind::NONE:
         default:

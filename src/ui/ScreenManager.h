@@ -14,6 +14,7 @@
 // intentionally outside the current thin-slice implementation.
 
 #include "Screen.h"
+#include "ScreenKind.h"
 #include "../input/InputEvent.h"
 
 class TouchManager;
@@ -23,6 +24,8 @@ class ScreenManager
 public:
     void bindTouchManager(TouchManager* touchManager);
 
+    void registerScreen(Screen* screen);
+
     void activate(Screen* screen);
 
     void update();
@@ -30,6 +33,12 @@ public:
     void onInput(const InputEvent& event);
 
 private:
+    Screen* resolve(ScreenKind kind);
+
     Screen* currentScreen_ = nullptr;
     TouchManager* touchManager_ = nullptr;
+
+    static constexpr uint8_t MAX_SCREENS = 8;
+    Screen* registry_[MAX_SCREENS] = {};
+    uint8_t registryCount_ = 0;
 };

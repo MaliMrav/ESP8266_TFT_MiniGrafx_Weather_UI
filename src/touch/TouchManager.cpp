@@ -116,6 +116,28 @@ void TouchManager::update()
             break;
         }
 
+        case Profile::ControlPanel:
+        {
+            if (ScreenZones::isInHeader(point.x, point.y))
+            {
+                emitEvent(InputAction::BACK, point);
+            }
+            else if (ScreenZones::isInContentUp(point.x, point.y))
+            {
+                emitEvent(InputAction::SCROLL_UP, point);
+            }
+            else if (ScreenZones::isInContentDown(point.x, point.y))
+            {
+                emitEvent(InputAction::SCROLL_DOWN, point);
+            }
+            else
+            {
+                emitEvent(InputAction::SELECT, point);
+            }
+            
+            break;
+        }
+
         case Profile::Calibration:
         {
             emitEvent(InputAction::TAP, point);

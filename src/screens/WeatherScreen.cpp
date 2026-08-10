@@ -57,6 +57,9 @@ ScreenIntent WeatherScreen::onInput(const InputEvent& event)
 
             break;
 
+        case InputAction::NEXT_SCREEN:
+            return ScreenIntent::navigateTo(ScreenKind::ControlPanel);
+
         case InputAction::SELECT:
             // Contextual selection.
             break;

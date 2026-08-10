@@ -29,13 +29,38 @@ void ControlPanelScreen::update()
 
 ScreenIntent ControlPanelScreen::onInput(const InputEvent& event)
 {
+    // BACK has screen/page hierarchy semantics.
+    //
+    // A child page returns to the Control Panel menu.
+    // The menu itself requests screen-level navigation.
+    if (event.action == InputAction::BACK)
+    {
+        if (activePage_ == &menuPage_)
+        {
+            // Already at the Control Panel root.
+            // Request screen-level navigation.
+            return ScreenIntent::back();
+        }
+
+        if (activePage_)
+        {
+            activePage_->onLeave();
+        }
+
+        activePage_ = &menuPage_;
+        activePage_->onEnter();
+
+        return ScreenIntent();
+    }
+
     if (activePage_)
     {
         activePage_->onInput(event);
 
-        // If the active page is the menu, check whether the user has
-        // selected a different page.
-        if (activePage_ == &menuPage_)
+        // Selection changes the highlighted menu item.
+        // SELECT activates the currently selected page.
+        if (activePage_ == &menuPage_ &&
+            event.action == InputAction::SELECT)
         {
             switch (menuPage_.selectedPage())
             {
@@ -47,26 +72,7 @@ ScreenIntent ControlPanelScreen::onInput(const InputEvent& event)
                     activate(connectivityPage_);
                     break;
             }
-
-            return ScreenIntent();
         }
-    }
-
-    if (event.action == InputAction::BACK)
-    {
-        if (activePage_ == &menuPage_)
-        {
-            // Already on the menu page, so leave Control Panel.
-            // Screen-level navigation will be handled by ScreenManager.
-
-            return ScreenIntent();
-        }
-
-        activePage_->onLeave();
-        activePage_ = &menuPage_;
-        activePage_->onEnter();
-
-        return ScreenIntent();
     }
 
     return ScreenIntent();

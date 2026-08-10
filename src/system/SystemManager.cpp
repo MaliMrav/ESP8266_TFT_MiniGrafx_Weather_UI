@@ -15,6 +15,7 @@
 #include "../screens/BootScreen.h"
 #include "../screens/CalibrationScreen.h"
 #include "../screens/WeatherScreen.h"
+#include "../screens/control/ControlPanelScreen.h"
 #include "../system/StatusCallback.h"
 #include "../touch/TouchController.h"
 #include "../touch/TouchManager.h"
@@ -230,6 +231,10 @@ namespace SystemManager
         s_dataSource = &dataSource;
 
         s_screenManager->bindTouchManager(s_touchManager);
+
+        s_screenManager->registerScreen(s_weatherScreen);
+        s_screenManager->registerScreen(s_calibrationScreen);
+        s_screenManager->registerScreen(s_controlPanelScreen);
 
         if (s_display)
         {
