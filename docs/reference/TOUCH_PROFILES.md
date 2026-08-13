@@ -82,11 +82,11 @@ All profiles share the same underlying zone definitions from `ScreenZones`.
 │           HEADER                │  → varies by profile
 ├────┬───────────────────────┬────┤
 │    │      TOP STRIP        │    │
-│    ├───────────────────────┤    │
-│ L  │                       │ R  │
-│ E  │    CONTENT AREA       │ I  │
-│ F  │                       │ G  │
-│ T  │                       │ H  │
+│    ├───────────────────────┤ S  │
+│ B  │                       │ E  │
+│ A  │    CONTENT / TAP      │ L  │
+│ C  │                       │ E  │
+│ K  │                       │ C  │
 │    ├───────────────────────┤ T  │
 │    │     BOTTOM STRIP      │    │
 └────┴───────────────────────┴────┘
