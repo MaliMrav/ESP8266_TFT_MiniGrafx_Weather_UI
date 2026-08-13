@@ -176,19 +176,15 @@ The touch layer therefore does **not** contain knowledge such as "this coordinat
 
 ### ControlPanel
 
-Used by `ControlPanelScreen` and its child pages.
+Used by `ControlPanelScreen` and all pages within it.
 
-Child pages do not require separate touch profiles merely because they are different pages.
-
-A new profile is justified only when a context introduces genuinely different **physical-to-semantic input semantics**.
-
-| Zone | Action |
-|---|---|
-| Left edge | `BACK` |
-| Right edge | `SELECT` |
-| Top strip | `SCROLL_UP` |
-| Bottom strip | `SCROLL_DOWN` |
-| Content area | `TAP + position` |
+| Zone         | Action          |
+|--------------|-----------------|
+| Left edge    | `BACK`          |
+| Right edge   | `SELECT`        |
+| Top strip    | `SCROLL_UP`     |
+| Bottom strip | `SCROLL_DOWN`   |
+| Content area | `TAP + position`|
 
 The content-area tap retains its position so that the active page can perform local hit-testing where appropriate.
 
