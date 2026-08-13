@@ -2,106 +2,154 @@
 
 ## Overview
 
-`TouchManager` translates raw touch coordinates into semantic `InputEvent` objects.
+`TouchManager` translates physical touch interaction into semantic `InputEvent` objects.
 
-The translation is not fixed. It depends on context.
+The translation is **context-dependent**.
 
-The same physical touch in the same screen location can mean different things depending on which screen is active.
+The same physical interaction can produce a different semantic input depending on the active screen.
 
-That context is captured in a **touch profile**.
+That context is represented by a **touch profile**.
 
----
-
-## Why Profiles Exist
-
-Consider a touch at the left edge of the screen.
-
-On the Weather screen, that means:
-
-```
-PREVIOUS_SCREEN
-```
-
-On the Control Panel, that means:
-
-```
-BACK
-```
-
-The physical interaction is identical.
-
-The semantic meaning is different.
-
-A single fixed zone-to-action mapping cannot express this.
-
-Profiles solve this by allowing `TouchManager` to apply a different translation table depending on the active screen context.
-
-This preserves the semantic input boundary:
+A touch profile therefore defines how physical touch is translated into the input vocabulary for a particular screen context.
 
 ```text
 Physical touch
       │
       ▼
-TouchManager (applies active profile)
+TouchManager
       │
+      │  active touch profile
       ▼
 Semantic InputEvent
       │
       ▼
 Active Screen
+      │
+      │  contextual interpretation
+      ▼
+Local behaviour / ScreenIntent / SystemIntent
 ```
 
-The screen never sees coordinates. It sees meaning.
+The important distinction is:
+
+> **TouchManager determines what physically happened. The active context determines what that interaction means.**
+
+The screen does not interpret raw touch coordinates as hardware input. It receives semantic input.
+
+---
+
+## Why Profiles Exist
+
+Consider a touch at the left edge of the display.
+
+On the Weather screen, it may mean:
+
+```text
+PREVIOUS_SCREEN
+```
+
+On the Control Panel, it means:
+
+```text
+BACK
+```
+
+The physical interaction is identical.
+
+The semantic input is different.
+
+A single fixed zone-to-action mapping cannot express this distinction without introducing screen-specific interpretation into the input layer.
+
+Touch profiles provide the necessary translation boundary:
+
+```text
+Physical interaction
+        │
+        ▼
+TouchManager
+        │
+        │  "What happened?"
+        ▼
+InputEvent
+        │
+        ▼
+Active context
+        │
+        │  "What does it mean here?"
+        ▼
+Contextual behaviour
+```
+
+This preserves the interaction architecture established in Sprint Delta.
 
 ---
 
 ## Who Sets the Profile
 
-`ScreenManager` sets the profile when it activates a screen:
+`ScreenManager` sets the touch profile when it activates a screen.
+
+The profile is selected from the `ScreenKind` of the newly active screen:
 
 ```text
 ScreenManager::activate(screen)
       │
-      ├── calls screen->enter()
+      ├── current screen → leave()
       │
-      └── calls touchManager->setProfile(...)
+      ├── select new active screen
+      │
+      ├── TouchManager::setProfile(...)
+      │
+      └── new screen → enter()
 ```
 
-The profile therefore always matches the active screen.
+The profile therefore follows the active screen.
 
-No screen needs to manage its own touch profile.
+Screens do not manage their own `TouchManager` profiles.
+
+This keeps the ownership boundary clear:
+
+- `TouchManager` owns physical-to-semantic translation.
+- `ScreenManager` owns screen activation.
+- The active screen owns contextual interpretation.
+- `ScreenManager` consumes `ScreenIntent` and owns screen transitions.
 
 ---
 
 ## Zone Layout
 
-All profiles share the same underlying zone definitions from `ScreenZones`.
+Profiles share the common physical zone definitions provided by `ScreenZones`.
+
+The meaning assigned to those zones may vary between profiles.
 
 ```text
 ┌─────────────────────────────────┐
-│           HEADER                │  → varies by profile
+│           HEADER                │  → profile-dependent
 ├────┬───────────────────────┬────┤
 │    │      TOP STRIP        │    │
-│    ├───────────────────────┤ S  │
-│ B  │                       │ E  │
-│ A  │    CONTENT / TAP      │ L  │
-│ C  │                       │ E  │
-│ K  │                       │ C  │
+│    ├───────────────────────┤    │
+│ L  │                       │ R  │
+│ E  │    CONTENT / TAP      │ I  │
+│ F  │                       │ G  │
+│ T  │                       │ H  │
 │    ├───────────────────────┤ T  │
 │    │     BOTTOM STRIP      │    │
 └────┴───────────────────────┴────┘
 ```
 
-Zone dimensions (defined in `ScreenZones.h`):
+The current physical zone boundaries, as defined by `ScreenZones.h`, are:
 
-| Zone         | Boundary                          |
-|--------------|-----------------------------------|
-| Header       | y < 58                            |
-| Left edge    | x < 40                            |
-| Right edge   | x >= 200                          |
-| Top strip    | y 58–118, inside edges            |
-| Bottom strip | y 260–320, inside edges           |
-| Content area | remainder                         |
+| Zone | Boundary |
+|---|---|
+| Header | `y < 58` |
+| Left edge | `x < 40` |
+| Right edge | `x >= 200` |
+| Top strip | `y = 58–118`, inside edges |
+| Bottom strip | `y = 260–320`, inside edges |
+| Content area | Remaining area |
+
+These are **physical boundaries**, not application semantics.
+
+A profile assigns semantic meaning to the interactions occurring within them.
 
 ---
 
@@ -111,78 +159,212 @@ Zone dimensions (defined in `ScreenZones.h`):
 
 Used by `WeatherScreen`.
 
-| Zone         | Action            |
-|--------------|-------------------|
-| Header       | `TAP + position`  |
-| Left edge    | `PREVIOUS_SCREEN` |
-| Right edge   | `NEXT_SCREEN`     |
-| Content area | `SELECT`          |
+| Zone | Action |
+|---|---|
+| Header | `TAP + position` |
+| Left edge | `PREVIOUS_SCREEN` |
+| Right edge | `NEXT_SCREEN` |
+| Content area | `SELECT` |
 
-The header tap carries position so `WeatherScreen` can hit-test the clock area locally.
+The header interaction retains its position.
+
+This allows `WeatherScreen` to perform local hit-testing, such as determining whether a tap occurred within the clock area.
+
+The touch layer therefore does **not** contain knowledge such as "this coordinate is the clock."
+
+---
 
 ### ControlPanel
 
-Used by `ControlPanelScreen` and all pages within it.
+Used by `ControlPanelScreen` and its child pages.
 
-| Zone         | Action          |
-|--------------|-----------------|
-| Left edge    | `BACK`          |
-| Right edge   | `SELECT`        |
-| Top strip    | `SCROLL_UP`     |
-| Bottom strip | `SCROLL_DOWN`   |
-| Content area | `TAP + position`|
+Child pages do not require separate touch profiles merely because they are different pages.
 
-The content area tap carries position so individual pages can perform direct item selection by hit-testing locally.
+A new profile is justified only when a context introduces genuinely different **physical-to-semantic input semantics**.
 
-This means a rotary encoder producing `SCROLL_UP`, `SCROLL_DOWN`, and `SELECT` works identically to touch — the pages never see anything hardware-specific.
+| Zone | Action |
+|---|---|
+| Left edge | `BACK` |
+| Right edge | `SELECT` |
+| Top strip | `SCROLL_UP` |
+| Bottom strip | `SCROLL_DOWN` |
+| Content area | `TAP + position` |
+
+The content-area tap retains its position so that the active page can perform local hit-testing where appropriate.
+
+This allows a touch interaction and an encoder interaction to converge on the same semantic vocabulary:
+
+```text
+Touch ────────┐
+              │
+              ▼
+          InputEvent
+              ▲
+              │
+Encoder ──────┘
+```
+
+The pages therefore remain independent of the physical input device.
+
+---
 
 ### Status
 
-Used by status and information screens.
+Used by `StatusScreen`.
 
-| Zone         | Action            |
-|--------------|-------------------|
-| Header       | `BACK`            |
-| Left edge    | `PREVIOUS_SCREEN` |
-| Right edge   | `NEXT_SCREEN`     |
-| Upper half   | `SCROLL_UP`       |
-| Lower half   | `SCROLL_DOWN`     |
-| Content area | `SELECT`          |
+| Zone | Action |
+|---|---|
+| Header | `BACK` |
+| Left edge | `PREVIOUS_SCREEN` |
+| Right edge | `NEXT_SCREEN` |
+| Upper content | `SCROLL_UP` |
+| Lower content | `SCROLL_DOWN` |
+| Content area | `SELECT` |
+
+The exact interpretation of these semantic actions remains the responsibility of the active screen.
+
+---
 
 ### Calibration
 
 Used by `CalibrationScreen`.
 
-All touches produce `TAP + raw position`.
+Calibration deliberately operates differently from normal application screens.
 
-Raw coordinates are used here because calibration is the process that produces the correction coefficients — applying those coefficients during calibration would be circular.
+Touches produce:
+
+```text
+TAP + raw position
+```
+
+The raw position is required because calibration is responsible for establishing the coordinate correction that normal touch interaction will subsequently use.
+
+Applying the calibration correction while determining that correction would introduce a circular dependency.
+
+Calibration is therefore an explicit exception to the normal calibrated-touch path.
+
+---
 
 ### Generic
 
-Fallback profile. All touches produce `TAP + position`.
+The fallback profile.
+
+Touches produce:
+
+```text
+TAP + position
+```
+
+No screen-specific semantic interpretation is performed by the profile.
+
+The receiving context decides what the interaction means.
 
 ---
 
 ## Profile Switching and Debounce
 
-When `ScreenManager` activates a new screen, it calls `setProfile()` on `TouchManager`.
+When `ScreenManager` activates a new screen, it changes the active `TouchManager` profile.
 
-`setProfile()` changes the active profile but deliberately does **not** reset the `wasTouched_` flag.
+Changing the profile does **not** reset the touch-state flag tracking whether a finger is currently being held.
 
-This is intentional.
+This is deliberate.
 
-If `wasTouched_` were reset on a profile switch, the finger that triggered navigation would still be in contact when the new profile became active. The next `update()` call would see the finger lift, clear `wasTouched_`, and immediately fire a second event on the new screen — producing a ghost interaction.
+Consider a navigation gesture:
 
-The correct reset point is when the finger actually lifts, which `update()` handles naturally via the `isTouched() == false` branch.
+```text
+WeatherScreen
+     │
+     │ finger touches right edge
+     ▼
+NEXT_SCREEN
+     │
+     ▼
+ScreenManager
+     │
+     ▼
+ControlPanelScreen
+```
+
+The finger may still be physically touching the display when the new screen becomes active.
+
+If the profile switch artificially reset the touch state, the still-active touch could be interpreted as a new interaction by the newly activated screen.
+
+That could produce a **ghost interaction**.
+
+The correct state boundary is the physical release of the finger.
+
+`TouchManager::update()` therefore retains its touch state across a profile change and clears it when the physical touch is actually released.
+
+This is an important distinction:
+
+> **Changing context must not manufacture a new physical interaction.**
 
 ---
 
 ## Adding a New Profile
 
-To add a profile for a new screen:
+A new touch profile should be introduced when a screen requires a different mapping from **physical touch to semantic input**.
 
-1. Add the value to the `Profile` enum in `TouchManager.h`
-2. Add a `case` in `TouchManager::update()` mapping zones to actions
-3. Add a `case` in `ScreenManager::activate()` mapping the `ScreenKind` to the new profile
+The architectural sequence is:
 
-The screen itself requires no changes.
+1. Define the physical interaction vocabulary required by the screen.
+2. Determine which existing zones provide those interactions.
+3. Introduce a new profile only where the existing mappings are insufficient.
+4. Associate the profile with the corresponding `ScreenKind`.
+5. Keep application-specific interpretation out of `TouchManager`.
+
+The test for whether a new profile is necessary is therefore:
+
+> **Does this context require different physical-to-semantic translation?**
+
+Not:
+
+> **Does this screen behave differently?**
+
+Different screen behaviour normally belongs in the screen's contextual interpretation, not in another touch profile.
+
+---
+
+## Architectural Boundary
+
+Touch profiles are deliberately a **translation mechanism**, not a behaviour mechanism.
+
+They must not contain knowledge such as:
+
+```text
+"tap here means change the clock"
+"tap here means open Control Panel"
+"tap here means reset the device"
+```
+
+Instead they produce semantic inputs such as:
+
+```text
+TAP
+SELECT
+SCROLL_UP
+SCROLL_DOWN
+BACK
+NEXT_SCREEN
+```
+
+The receiving context then interprets those inputs:
+
+```text
+InputEvent
+      │
+      ▼
+Active Screen
+      │
+      │ contextual interpretation
+      ├───────────────┬────────────────┐
+      ▼               ▼                ▼
+Local behaviour   ScreenIntent     SystemIntent
+      │               │                │
+      ▼               ▼                ▼
+Screen state     ScreenManager    System Context
+```
+
+This preserves the fundamental interaction architecture:
+
+> **Input describes what happened. Context determines what it means.**

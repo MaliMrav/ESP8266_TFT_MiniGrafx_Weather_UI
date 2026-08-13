@@ -41,19 +41,23 @@ void ScreenManager::activate(Screen* screen)
         switch (currentScreen_->kind())
         {
             case ScreenKind::Weather:
-                touchManager_->setProfile(TouchManager::Profile::Weather);
+                touchManager_->setProfile(
+                    TouchManager::Profile::Weather);
                 break;
 
             case ScreenKind::ControlPanel:
-                touchManager_->setProfile(TouchManager::Profile::ControlPanel);
+                touchManager_->setProfile(
+                    TouchManager::Profile::ControlPanel);
                 break;
 
             case ScreenKind::Calibration:
-                touchManager_->setProfile(TouchManager::Profile::Calibration);
+                touchManager_->setProfile(
+                    TouchManager::Profile::Calibration);
                 break;
 
             default:
-                touchManager_->setProfile(TouchManager::Profile::Generic);
+                touchManager_->setProfile(
+                    TouchManager::Profile::Generic);
                 break;
         }
     }
@@ -86,20 +90,25 @@ void ScreenManager::onInput(const InputEvent& event)
         case ScreenIntentKind::NAVIGATE:
         {
             Screen* target = resolve(intent.target);
+
             if (target)
             {
                 activate(target);
             }
+
             break;
         }
 
         case ScreenIntentKind::BACK:
         {
-            Screen* weather = resolve(ScreenKind::Weather);
-            if (weather)
+            // Thin-slice back behaviour currently returns to Weather.
+            Screen* target = resolve(ScreenKind::Weather);
+
+            if (target)
             {
-                activate(weather);
+                activate(target);
             }
+
             break;
         }
 
