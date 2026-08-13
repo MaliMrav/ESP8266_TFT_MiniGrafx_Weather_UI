@@ -122,7 +122,7 @@ The header tap carries position so `WeatherScreen` can hit-test the clock area l
 
 ### ControlPanel
 
-Used by `ControlPanelScreen` and all pages within it.
+The ControlPanel profile is active for the entire `ControlPanelScreen`, including its child pages. Child pages do not require separate TouchManager profiles unless they introduce genuinely different physical-to-semantic input semantics.
 
 | Zone         | Action          |
 |--------------|-----------------|
