@@ -86,20 +86,20 @@ This preserves the interaction architecture established in Sprint Delta.
 
 ## Who Sets the Profile
 
-`ScreenManager` sets the touch profile when it activates a screen.
+`ScreenManager` owns screen activation and therefore selects the touch profile associated with the active screen.
 
-The profile is selected from the `ScreenKind` of the newly active screen:
+Conceptually:
 
 ```text
 ScreenManager::activate(screen)
-      │
-      ├── current screen → leave()
-      │
-      ├── select new active screen
-      │
-      ├── TouchManager::setProfile(...)
-      │
-      └── new screen → enter()
+        │
+        ├── leave previous screen
+        │
+        ├── select touch profile
+        │
+        ├── make screen active
+        │
+        └── enter new screen
 ```
 
 The profile therefore follows the active screen.
@@ -176,15 +176,19 @@ The touch layer therefore does **not** contain knowledge such as "this coordinat
 
 ### ControlPanel
 
-Used by `ControlPanelScreen` and all pages within it.
+Used by `ControlPanelScreen` and its child pages.
 
-| Zone         | Action          |
-|--------------|-----------------|
-| Left edge    | `BACK`          |
-| Right edge   | `SELECT`        |
-| Top strip    | `SCROLL_UP`     |
-| Bottom strip | `SCROLL_DOWN`   |
-| Content area | `TAP + position`|
+Child pages do not require separate touch profiles merely because they are different pages.
+
+A new profile is justified only when a context introduces genuinely different **physical-to-semantic input semantics**.
+
+| Zone | Action |
+|---|---|
+| Left edge | `BACK` |
+| Right edge | `SELECT` |
+| Top strip | `SCROLL_UP` |
+| Bottom strip | `SCROLL_DOWN` |
+| Content area | `TAP + position` |
 
 The content-area tap retains its position so that the active page can perform local hit-testing where appropriate.
 
