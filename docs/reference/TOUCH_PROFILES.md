@@ -84,11 +84,11 @@ All profiles share the same underlying zone definitions from `ScreenZones`.
 │    │      TOP STRIP        │    │
 │    ├───────────────────────┤    │
 │ L  │                       │ R  │
-│ E  │    CONTENT AREA       │ E  │
-│ F  │                       │ I  │
-│ T  │                       │ G  │
-│    ├───────────────────────┤ H  │
-│    │     BOTTOM STRIP      │ T  │
+│ E  │    CONTENT AREA       │ I  │
+│ F  │                       │ G  │
+│ T  │                       │ H  │
+│    ├───────────────────────┤ T  │
+│    │     BOTTOM STRIP      │    │
 └────┴───────────────────────┴────┘
 ```
 
