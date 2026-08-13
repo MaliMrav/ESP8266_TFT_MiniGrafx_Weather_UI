@@ -19,9 +19,17 @@ TouchManager::TouchManager(
 void TouchManager::setProfile(
     Profile profile)
 {
+    // Only the profile changes here. wasTouched_ is deliberately not reset.
+    //
+    // Resetting wasTouched_ on a profile switch caused a ghost event on the
+    // incoming screen: the finger that triggered navigation was still in
+    // contact when the new profile became active, so the next update() call
+    // saw an untouched state, cleared wasTouched_, and immediately fired a
+    // second event on the new screen.
+    //
+    // The correct reset point is when the finger actually lifts, which
+    // update() already handles via the isTouched() == false branch.
     profile_ = profile;
-    wasTouched_ = false;
-    lastEventMs_ = 0;
 }
 
 void TouchManager::emitEvent(
@@ -118,23 +126,26 @@ void TouchManager::update()
 
         case Profile::ControlPanel:
         {
-            if (ScreenZones::isInHeader(point.x, point.y))
+            if (ScreenZones::isInLeftEdge(point.x, point.y))
             {
                 emitEvent(InputAction::BACK, point);
             }
-            else if (ScreenZones::isInContentUp(point.x, point.y))
+            else if (ScreenZones::isInRightEdge(point.x, point.y))
+            {
+                emitEvent(InputAction::SELECT, point);
+            }
+            else if (ScreenZones::isInTopStrip(point.x, point.y))
             {
                 emitEvent(InputAction::SCROLL_UP, point);
             }
-            else if (ScreenZones::isInContentDown(point.x, point.y))
+            else if (ScreenZones::isInBottomStrip(point.x, point.y))
             {
                 emitEvent(InputAction::SCROLL_DOWN, point);
             }
             else
             {
-                emitEvent(InputAction::SELECT, point);
+                emitEvent(InputAction::TAP, point);
             }
-            
             break;
         }
 

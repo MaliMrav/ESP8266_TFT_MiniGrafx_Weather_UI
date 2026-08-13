@@ -9,6 +9,7 @@ Unlike the architectural journey, these documents are not primarily chronologica
 - [Data Layer Architecture](DATA_LAYER_ARCHITECTURE.md)
 - [Display Configuration](DISPLAY_CONFIGURATION.md)
 - [Calibration Rules](CALIBRATION_RULES.md)
+- [Touch Profiles](TOUCH_PROFILES.md)
 
 ## Architecture vs Reference
 

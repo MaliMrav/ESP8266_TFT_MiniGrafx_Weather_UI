@@ -516,17 +516,17 @@ Sprint Epsilon Phase 1 is complete when:
 
 The Sprint as a whole will be complete when:
 
-- [ ] `ScreenIntent` exists as an explicit navigation contract.
-- [ ] Screens can express navigation intent without directly manipulating `ScreenManager`.
-- [ ] `ScreenManager` owns actual Screen transitions.
-- [ ] `InputEvent` remains independent of navigation.
-- [ ] `InputAction` remains independent of application-specific destinations.
-- [ ] Local contextual interactions continue to work without navigation.
-- [ ] System-level interactions remain distinct from navigation.
-- [ ] `WeatherScreen → ControlPanelScreen` works.
-- [ ] `ControlPanelScreen → WeatherScreen` works.
-- [ ] Screen lifecycle (`leave()` / `enter()`) remains correct.
-- [ ] The resulting implementation matches the architectural principles established in `How-We-Think.md`.
+- [x] `ScreenIntent` exists as an explicit navigation contract.
+- [x] Screens can express navigation intent without directly manipulating `ScreenManager`.
+- [x] `ScreenManager` owns actual Screen transitions.
+- [x] `InputEvent` remains independent of navigation.
+- [x] `InputAction` remains independent of application-specific destinations.
+- [x] Local contextual interactions continue to work without navigation.
+- [x] System-level interactions remain distinct from navigation.
+- [x] `WeatherScreen → ControlPanelScreen` works.
+- [x] `ControlPanelScreen → WeatherScreen` works.
+- [x] Screen lifecycle (`leave()` / `enter()`) remains correct.
+- [x] The resulting implementation matches the architectural principles established in `How-We-Think.md`.
 
 ---
 

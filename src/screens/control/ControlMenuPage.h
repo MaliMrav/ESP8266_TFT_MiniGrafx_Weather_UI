@@ -22,5 +22,10 @@ public:
     }
 
 private:
+    static constexpr int ITEMS_Y      = 30;
+    static constexpr int LINE_HEIGHT  = 18;
+
+    ControlPageKind pageForY(int16_t y) const;
+
     ControlPageKind selectedPage_ = ControlPageKind::About;
 };

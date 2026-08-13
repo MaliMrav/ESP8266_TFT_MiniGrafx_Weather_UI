@@ -19,13 +19,35 @@ namespace ScreenZones
 
     constexpr int HEADER_HEIGHT = 58;
 
-    constexpr int EDGE_WIDTH = 20;
+    constexpr int EDGE_WIDTH = 40;
 
     constexpr int CONTENT_TOP    = HEADER_HEIGHT;
     constexpr int CONTENT_BOTTOM = SCREEN_HEIGHT;
 
     constexpr int CONTENT_MID_Y =
         CONTENT_TOP + ((CONTENT_BOTTOM - CONTENT_TOP) / 2);
+
+    constexpr int STRIP_HEIGHT = 60;
+
+    inline bool isInTopStrip(
+        int16_t x,
+        int16_t y)
+    {
+        return y >= CONTENT_TOP &&
+               y < (CONTENT_TOP + STRIP_HEIGHT) &&
+               x >= EDGE_WIDTH &&
+               x < (SCREEN_WIDTH - EDGE_WIDTH);
+    }
+
+    inline bool isInBottomStrip(
+        int16_t x,
+        int16_t y)
+    {
+        return y >= (CONTENT_BOTTOM - STRIP_HEIGHT) &&
+               y < CONTENT_BOTTOM &&
+               x >= EDGE_WIDTH &&
+               x < (SCREEN_WIDTH - EDGE_WIDTH);
+    }
 
     inline bool isInHeader(
         int16_t x,

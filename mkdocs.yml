@@ -34,6 +34,7 @@ nav:
   - Reference:
       - Overview: reference/README.md
       - Calibration Rules: reference/CALIBRATION_RULES.md
+      - Touch Profiles: reference/TOUCH_PROFILES.md
       - Data Layer Architecture: reference/DATA_LAYER_ARCHITECTURE.md
       - Display Configuration: reference/DISPLAY_CONFIGURATION.md
   - Roadmap:
