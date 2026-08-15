@@ -1,5 +1,6 @@
 # macOS
 .DS_Store
+firmware-update.sh
 
 # Arduino build junk
 *.ino.cpp
