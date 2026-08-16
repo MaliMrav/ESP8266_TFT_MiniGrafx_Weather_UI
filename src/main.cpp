@@ -11,13 +11,15 @@
 #include "screens/CalibrationScreen.h"
 #include "screens/control/ControlPanelScreen.h"
 #include "screens/WeatherScreen.h"
+#include "screens/SolarScreen.h"
 
 #include "ui/ScreenManager.h"
 
 #include "system/SystemManager.h"
 
 #include "ota/OtaManager.h"
-#include "mqtt/MqttDataSource.h"
+#include "data/sources/mqtt/MqttDataSource.h"
+#include "data/DataSourceManager.h"
 
 //=============================================================================
 // Global objects
@@ -35,11 +37,13 @@ ScreenManager screenManager;
 
 BootScreen bootScreen(display);
 WeatherScreen weatherScreen(display);
+SolarScreen solarScreen(display);
 CalibrationScreen calibrationScreen(display,touchController);
 ControlPanelScreen controlPanelScreen(display);
 
 OtaManager ota;
-MqttDataSource mqttData;
+MqttDataSource  mqttData;
+DataSourceManager dataSources;
 
 //=============================================================================
 // Arduino setup
@@ -49,6 +53,8 @@ void setup()
 {
     Serial.begin(115200);
 
+    dataSources.add(mqttData);
+
     SystemManager::begin(
         display,
         touchController,
@@ -56,10 +62,11 @@ void setup()
         screenManager,
         bootScreen,
         weatherScreen,
+        solarScreen,
         calibrationScreen,
         controlPanelScreen,
         ota,
-        mqttData);
+        dataSources);
 }
 
 //=============================================================================

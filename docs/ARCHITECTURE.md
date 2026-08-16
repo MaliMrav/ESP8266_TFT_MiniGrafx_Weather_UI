@@ -118,6 +118,7 @@ Presentation
 The source may be:
 
 - MQTT
+- a local HTTP API
 - a local sensor
 - a file
 - another transport
@@ -144,6 +145,66 @@ Information
 Telemetry observes and presents information.
 
 It deliberately does not become an intelligence layer.
+
+---
+
+## Multiple Sources, One Contract
+
+A real system rarely has a single data source. Weather sensors may publish to MQTT. A solar gateway may expose a local HTTP API. A future room sensor may sit on I2C.
+
+The `IDataSource` interface is the contract. `DataSourceManager` composes multiple implementations into one, so `SystemManager` always holds a single `IDataSource&` regardless of how many sources are running.
+
+Sources are registered in `main.cpp` before the system starts:
+
+```text
+main.cpp
+  │
+  ├── dataSources.add(mqttData)    ← weather sensors via MQTT broker
+  └── dataSources.add(envoyData)   ← solar sensors via Envoy local API
+              │
+              ▼
+       DataSourceManager
+              │  implements IDataSource
+              ▼
+       SystemManager
+```
+
+Neither source knows about the other. `SystemManager` does not know how many sources exist. Adding a new source requires no changes beyond `main.cpp` and the new source class itself.
+
+This is the data boundary working correctly:
+
+> **The application consumes information. It does not care how many transports delivered it.**
+
+---
+
+## Sensor Domains
+
+Sensor IDs are not a global resource.
+
+The original design used a single flat enum in `SensorIds.h`. Every sensor in the system — weather, solar, future room sensors — lived in one file. Adding a sensor to any domain required touching a file that belonged to no domain in particular.
+
+The pressure that exposed this: when a second screen domain (solar) was added, the weather screen had to know the total count of weather sensors to avoid bleeding into solar tiles. The count was implicit in array position, not explicit in the code.
+
+The fix is to make domain ownership explicit:
+
+```text
+WeatherSensorIds.h    — owned by the weather domain
+SolarSensorIds.h      — owned by the solar domain
+RoomSensorIds.h       — owned by a future room domain
+```
+
+Each domain declares its own `constexpr uint8_t` ID constants. `SensorRepository` is a flat indexed store with a fixed capacity (`MAX_SENSORS`). It has no knowledge of domains.
+
+The result:
+
+- A screen includes only the domain header it needs.
+- Adding a room sensor panel requires no changes to weather or solar files.
+- `SensorRepository.cpp` uses designated initialisers to make the slot assignment explicit and auditable.
+- A `static_assert` validates that all assigned IDs fit within capacity.
+
+This is the same principle as the display and input boundaries applied to data:
+
+> **Each domain owns its own identity. The repository provides the store. Neither needs to know about the other's internals.**
 
 ---
 
@@ -421,6 +482,7 @@ Screen transition
 - activating the next Screen
 - entering the new Screen
 - screen-level lifecycle transitions
+- navigation history
 
 The Screen does not directly manipulate `ScreenManager`.
 
@@ -431,6 +493,24 @@ The navigation owner executes the transition.
 This preserves the ownership boundary:
 
 > **The context interprets. The Screen may express navigation intent. `ScreenManager` owns navigation.**
+
+---
+
+## Navigation History
+
+Navigation in Telemetry is hierarchical, not a flat carousel.
+
+Screens may have internal depth (pages within a screen). A ring model breaks down the moment any screen has internal hierarchy, because lateral navigation and back navigation would share the same gesture with two different meanings.
+
+`ScreenManager` therefore maintains a shallow history stack.
+
+- `ScreenIntent::navigateTo()` pushes the current screen onto the stack before activating the destination.
+- `ScreenIntent::back()` pops the stack, returning to wherever the user came from.
+- `activate()` — used for boot and calibration — does not push to the stack. Those transitions are not part of user-navigable history.
+
+Screens have no knowledge of the stack. The history is owned entirely by `ScreenManager`.
+
+That is the architecture working correctly: the Screen expresses intent, the owner of navigation decides what that means.
 
 ---
 
@@ -735,7 +815,11 @@ Because application code should not depend directly on display hardware.
 
 ### Why is there a data boundary?
 
-Because the application should not care where observations originate.
+Because the application should not care where observations originate, how many sources are running, or what transport each source uses.
+
+### Why are sensor IDs declared per-domain?
+
+Because a global sensor enum forces every domain to know about every other domain. When a new screen is added, no existing domain file should need to change.
 
 ### Why is there an InputManager?
 

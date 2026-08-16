@@ -73,6 +73,18 @@ namespace MQTT
 
 
 // -----------------------------------------------------------------------------
+// Connectivity — API
+// -----------------------------------------------------------------------------
+namespace ApiConfig
+{
+    // The currently configured API credentials are stored in secrets.h.
+    constexpr const char* HOST    = EnvoySecrets::HOST;
+    constexpr const char* TOKEN   = EnvoySecrets::TOKEN;
+    constexpr uint32_t    POLL_MS = CFG_API_POLL_MS;
+}
+
+
+// -----------------------------------------------------------------------------
 // Connectivity — OTA
 // -----------------------------------------------------------------------------
 namespace OtaConfig

@@ -58,6 +58,16 @@
 
 
 // -----------------------------------------------------------------------------
+// Connectivity — API
+// -----------------------------------------------------------------------------
+// API host/credentials are defined in secrets.h.
+// The poll interval controls API-source polling.
+#ifndef CFG_API_POLL_MS
+  #define CFG_API_POLL_MS 10000
+#endif
+
+
+// -----------------------------------------------------------------------------
 // Connectivity — OTA
 // -----------------------------------------------------------------------------
 // OTA credentials are defined in secrets.h.
@@ -280,11 +290,23 @@
 //   Line 1 (yellow) — the mapped InputAction and calibrated screen coordinates
 //   Line 2 (blue)   — the raw ADC values from the XPT2046 touch controller
 //
-// This is useful for diagnosing touch calibration, zone boundaries, and the
-// full input pipeline without needing a serial connection.
-//
 // Disabled by default. Enable in config_override.h by uncommenting:
 //   #define DEBUG_OVERLAY
 //
 // Compiles away completely when not defined — zero overhead in production.
 // #define DEBUG_OVERLAY
+
+
+// -----------------------------------------------------------------------------
+// Envoy Debug Overlay
+// -----------------------------------------------------------------------------
+//
+// When enabled, a three-line diagnostic bar is rendered at the bottom of
+// SolarScreen showing the last HTTP status code and JSON parse result for
+// each Envoy endpoint. Useful when no serial connection is available.
+//
+// Disabled by default. Enable in config_override.h by uncommenting:
+//   #define ENVOY_DEBUG
+//
+// Compiles away completely when not defined — zero overhead in production.
+// #define ENVOY_DEBUG

@@ -3,9 +3,9 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-#include "../config/config.h"
-#include "../models/SensorRepository.h"
-#include "../mqtt/TopicMappings.h"
+#include "../../../config/config.h"
+#include "../../../models/SensorRepository.h"
+#include "TopicMappings.h"
 
 static WiFiClient   wifiClient;
 static PubSubClient mqttClient(wifiClient);

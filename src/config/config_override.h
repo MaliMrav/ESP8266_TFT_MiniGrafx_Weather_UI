@@ -33,6 +33,16 @@
 
 
 // -----------------------------------------------------------------------------
+// Connectivity — API
+// -----------------------------------------------------------------------------
+// API host/credentials are defined in secrets.h.
+// Override the poll interval here if needed.
+//
+// #undef  CFG_API_POLL_MS
+// #define CFG_API_POLL_MS 10000
+
+
+// -----------------------------------------------------------------------------
 // Time and Locale
 // -----------------------------------------------------------------------------
 //
@@ -209,3 +219,6 @@
 //
 // Uncomment to enable:
 // #define DEBUG_OVERLAY
+
+// Uncomment to enable Envoy HTTP diagnostic overlay on SolarScreen:
+#define ENVOY_DEBUG

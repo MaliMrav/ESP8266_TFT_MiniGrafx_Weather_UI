@@ -10,8 +10,11 @@
 // That responsibility belongs to the active Screen (or the appropriate
 // higher-level context for system-level behaviour).
 //
-// Navigation history and more advanced transition policies are
-// intentionally outside the current thin-slice implementation.
+// Navigation history is maintained as a shallow stack. NAVIGATE pushes
+// the destination onto the stack. BACK pops it, returning to wherever
+// the user came from. The stack has a fixed maximum depth — sufficient
+// for the current navigation tree and protective against unbounded growth
+// on a memory-constrained device.
 
 #include "Screen.h"
 #include "ScreenKind.h"
@@ -26,6 +29,9 @@ public:
 
     void registerScreen(Screen* screen);
 
+    // Activates a screen without pushing to the history stack.
+    // Used for boot and calibration transitions that should not
+    // be part of the user-navigable history.
     void activate(Screen* screen);
 
     void update();
@@ -33,6 +39,14 @@ public:
     void onInput(const InputEvent& event);
 
 private:
+    void applyProfile(Screen* screen);
+
+    // Pushes destination onto the history stack and activates it.
+    void navigateTo(Screen* screen);
+
+    // Pops the history stack and returns to the previous screen.
+    void navigateBack();
+
     Screen* resolve(ScreenKind kind);
 
     Screen* currentScreen_ = nullptr;
@@ -41,4 +55,8 @@ private:
     static constexpr uint8_t MAX_SCREENS = 8;
     Screen* registry_[MAX_SCREENS] = {};
     uint8_t registryCount_ = 0;
+
+    static constexpr uint8_t MAX_HISTORY = 8;
+    Screen* history_[MAX_HISTORY] = {};
+    uint8_t historyDepth_ = 0;
 };

@@ -20,6 +20,7 @@ class TouchManager;
 class ScreenManager;
 class BootScreen;
 class WeatherScreen;
+class SolarScreen;
 class CalibrationScreen;
 class ControlPanelScreen;
 class OtaManager;
@@ -31,16 +32,17 @@ namespace SystemManager
     String getHostname();
 
     void begin(
-        DisplayManager&    display,
-        TouchController&   touchController,
-        TouchManager&      touchManager,
-        ScreenManager&     screenManager,
-        BootScreen&        bootScreen,
-        WeatherScreen&     weatherScreen,
-        CalibrationScreen& calibrationScreen,
+        DisplayManager&     display,
+        TouchController&    touchController,
+        TouchManager&       touchManager,
+        ScreenManager&      screenManager,
+        BootScreen&         bootScreen,
+        WeatherScreen&      weatherScreen,
+        SolarScreen&        solarScreen,
+        CalibrationScreen&  calibrationScreen,
         ControlPanelScreen& controlPanelScreen,
-        OtaManager&        ota,
-        IDataSource&       dataSource);
+        OtaManager&         ota,
+        IDataSource&        dataSource);
 
     void update();
 }

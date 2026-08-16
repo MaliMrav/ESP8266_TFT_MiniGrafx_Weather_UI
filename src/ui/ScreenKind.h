@@ -19,5 +19,6 @@ enum class ScreenKind
     Status,
     Calibration,
     ControlPanel,
+    Solar,
     ConnectivityPage
 };

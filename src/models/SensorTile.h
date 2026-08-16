@@ -9,12 +9,14 @@
 //
 // SensorTile is a plain data struct. It has no behaviour of its own.
 // Data sources write to it via SensorRepository. Screens read it via
-// SensorRepository::getTiles().
+// SensorRepository::getTile().
 
 enum SensorType {
   TEMP,
   HUMIDITY,
-  PRESSURE
+  PRESSURE,
+  ENERGY_W,   // instantaneous power in Watts
+  ENERGY_WH   // accumulated energy in Watt-hours
 };
 
 enum TrendDirection {

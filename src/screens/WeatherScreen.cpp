@@ -2,6 +2,7 @@
 
 #include "../display/DisplayManager.h"
 #include "../models/SensorRepository.h"
+#include "../models/WeatherSensorIds.h"
 #include "../config/config.h"
 #include "../system/DebugOverlay.h"
 #include "ScreenConfig.h"
@@ -58,7 +59,7 @@ ScreenIntent WeatherScreen::onInput(const InputEvent& event)
             break;
 
         case InputAction::NEXT_SCREEN:
-            return ScreenIntent::navigateTo(ScreenKind::ControlPanel);
+            return ScreenIntent::navigateTo(ScreenKind::Solar);
 
         case InputAction::SELECT:
             // Contextual selection.
@@ -165,8 +166,14 @@ void WeatherScreen::drawWifiQuality()
 
 void WeatherScreen::drawSensorGrid()
 {
-    SensorTile* tiles = SensorRepository::getTiles();
-    uint8_t sensorCount = SensorRepository::getCount();
+    static const uint8_t ids[WEATHER_SENSOR_COUNT] = {
+        SENSOR_KITCHEN_TEMP,
+        SENSOR_PERGOLA_TEMP,
+        SENSOR_KITCHEN_HUM,
+        SENSOR_PERGOLA_HUM,
+        SENSOR_PRESSURE
+    };
+    uint8_t sensorCount = WEATHER_SENSOR_COUNT;
 
     const int margin = ScreenConfig::SIDE_MARGIN;
     const int gap    = ScreenConfig::TILE_GAP;
@@ -195,7 +202,7 @@ void WeatherScreen::drawSensorGrid()
         int w = full ? display_.getWidth() - (2 * margin) : tileW;
         int y = topY + row * (tileH + gap);
 
-        SensorTile& s = tiles[i];
+        SensorTile& s = SensorRepository::getTile(ids[i]);
 
         display_.setColor(DisplayManager::WHITE);
         display_.drawRect(x, y, w, tileH);

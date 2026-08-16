@@ -15,6 +15,7 @@
 #include "../screens/BootScreen.h"
 #include "../screens/CalibrationScreen.h"
 #include "../screens/WeatherScreen.h"
+#include "../screens/SolarScreen.h"
 #include "../screens/control/ControlPanelScreen.h"
 #include "../system/StatusCallback.h"
 #include "../touch/TouchController.h"
@@ -30,6 +31,7 @@ namespace
     ScreenManager* s_screenManager = nullptr;
     BootScreen* s_bootScreen = nullptr;
     WeatherScreen* s_weatherScreen = nullptr;
+    SolarScreen* s_solarScreen = nullptr;
     CalibrationScreen* s_calibrationScreen = nullptr;
     ControlPanelScreen* s_controlPanelScreen = nullptr;
     OtaManager* s_ota = nullptr;
@@ -116,7 +118,7 @@ namespace
         }
 
         bootStatus(
-            "Starting data source",
+            "Starting data sources",
             BootProgress::MQTT_INIT);
 
         if (s_dataSource)
@@ -208,16 +210,17 @@ namespace SystemManager
     }
 
     void begin(
-        DisplayManager&    display,
-        TouchController&   touchController,
-        TouchManager&      touchManager,
-        ScreenManager&     screenManager,
-        BootScreen&        bootScreen,
-        WeatherScreen&     weatherScreen,
-        CalibrationScreen& calibrationScreen,
+        DisplayManager&     display,
+        TouchController&    touchController,
+        TouchManager&       touchManager,
+        ScreenManager&      screenManager,
+        BootScreen&         bootScreen,
+        WeatherScreen&      weatherScreen,
+        SolarScreen&        solarScreen,
+        CalibrationScreen&  calibrationScreen,
         ControlPanelScreen& controlPanelScreen,
-        OtaManager&        ota,
-        IDataSource&       dataSource)
+        OtaManager&         ota,
+        IDataSource&        dataSource)
     {
         s_display = &display;
         s_touchController = &touchController;
@@ -225,6 +228,7 @@ namespace SystemManager
         s_screenManager = &screenManager;
         s_bootScreen = &bootScreen;
         s_weatherScreen = &weatherScreen;
+        s_solarScreen = &solarScreen;
         s_calibrationScreen = &calibrationScreen;
         s_controlPanelScreen = &controlPanelScreen;
         s_ota        = &ota;
@@ -233,6 +237,7 @@ namespace SystemManager
         s_screenManager->bindTouchManager(s_touchManager);
 
         s_screenManager->registerScreen(s_weatherScreen);
+        s_screenManager->registerScreen(s_solarScreen);
         s_screenManager->registerScreen(s_calibrationScreen);
         s_screenManager->registerScreen(s_controlPanelScreen);
 

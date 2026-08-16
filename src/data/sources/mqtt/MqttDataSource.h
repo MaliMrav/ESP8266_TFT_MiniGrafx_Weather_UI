@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../data/IDataSource.h"
+#include "../../IDataSource.h"
 
 // MqttDataSource is the MQTT implementation of IDataSource.
 //

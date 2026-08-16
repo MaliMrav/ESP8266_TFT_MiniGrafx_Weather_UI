@@ -27,45 +27,82 @@ void ScreenManager::bindTouchManager(TouchManager* touchManager)
     touchManager_ = touchManager;
 }
 
+void ScreenManager::applyProfile(Screen* screen)
+{
+    if (!touchManager_ || !screen) return;
+
+    switch (screen->kind())
+    {
+        case ScreenKind::Weather:
+        case ScreenKind::Solar:
+            touchManager_->setProfile(TouchManager::Profile::Weather);
+            break;
+
+        case ScreenKind::ControlPanel:
+            touchManager_->setProfile(TouchManager::Profile::ControlPanel);
+            break;
+
+        case ScreenKind::Calibration:
+            touchManager_->setProfile(TouchManager::Profile::Calibration);
+            break;
+
+        default:
+            touchManager_->setProfile(TouchManager::Profile::Generic);
+            break;
+    }
+}
+
 void ScreenManager::activate(Screen* screen)
 {
+    // activate() is used for boot and calibration transitions.
+    // It does not push to the history stack — these transitions
+    // are not part of the user-navigable history.
     if (currentScreen_)
     {
         currentScreen_->leave();
     }
 
     currentScreen_ = screen;
-
-    if (touchManager_ && currentScreen_)
-    {
-        switch (currentScreen_->kind())
-        {
-            case ScreenKind::Weather:
-                touchManager_->setProfile(
-                    TouchManager::Profile::Weather);
-                break;
-
-            case ScreenKind::ControlPanel:
-                touchManager_->setProfile(
-                    TouchManager::Profile::ControlPanel);
-                break;
-
-            case ScreenKind::Calibration:
-                touchManager_->setProfile(
-                    TouchManager::Profile::Calibration);
-                break;
-
-            default:
-                touchManager_->setProfile(
-                    TouchManager::Profile::Generic);
-                break;
-        }
-    }
+    applyProfile(currentScreen_);
 
     if (currentScreen_)
     {
         currentScreen_->enter();
     }
+}
+
+void ScreenManager::navigateTo(Screen* screen)
+{
+    if (!screen) return;
+
+    if (currentScreen_)
+    {
+        currentScreen_->leave();
+
+        // Push current screen onto the history stack before leaving.
+        if (historyDepth_ < MAX_HISTORY)
+        {
+            history_[historyDepth_++] = currentScreen_;
+        }
+    }
+
+    currentScreen_ = screen;
+    applyProfile(currentScreen_);
+    currentScreen_->enter();
+}
+
+void ScreenManager::navigateBack()
+{
+    if (historyDepth_ == 0) return;
+
+    if (currentScreen_)
+    {
+        currentScreen_->leave();
+    }
+
+    currentScreen_ = history_[--historyDepth_];
+    applyProfile(currentScreen_);
+    currentScreen_->enter();
 }
 
 void ScreenManager::update()
@@ -90,25 +127,16 @@ void ScreenManager::onInput(const InputEvent& event)
         case ScreenIntentKind::NAVIGATE:
         {
             Screen* target = resolve(intent.target);
-
             if (target)
             {
-                activate(target);
+                navigateTo(target);
             }
-
             break;
         }
 
         case ScreenIntentKind::BACK:
         {
-            // Thin-slice back behaviour currently returns to Weather.
-            Screen* target = resolve(ScreenKind::Weather);
-
-            if (target)
-            {
-                activate(target);
-            }
-
+            navigateBack();
             break;
         }
 
