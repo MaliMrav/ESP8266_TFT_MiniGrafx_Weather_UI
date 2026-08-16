@@ -657,7 +657,7 @@ No weather file changes. No solar file changes. No global enum to update.
 - `src/models/SolarSensorIds.h` — new; solar domain IDs
 - `src/models/SensorRepository.h` — `SensorId` → `uint8_t`; removed range API
 - `src/models/SensorRepository.cpp` — designated initialisers; capacity assert
-- `src/mqtt/TopicMappings.h` — includes domain headers instead of global enum
+- `src/data/sources/mqtt/TopicMappings.h` — includes domain headers instead of global enum
 - `src/screens/WeatherScreen.cpp` — explicit ID array replaces range slice
 - `src/screens/SolarScreen.h/.cpp` — `SensorId` → `uint8_t`
 
@@ -755,7 +755,7 @@ Weather sensors (Kitchen, Pergola) publish to MQTT. The Envoy uses HTTP. These a
 - `EnvoyDataSource` polls two Envoy local endpoints and writes solar sensor values directly to `SensorRepository`.
 - Dead MQTT entries for solar data (`Topics::Envoy`, solar rows in `TopicMappings.cpp`) are removed.
 
-## Envoy Endpoints
+## API Endpoints
 
 | Endpoint | Provides |
 |---|---|
@@ -771,11 +771,11 @@ Total household consumption (production + net import) is the one value not direc
 ## What Changed
 
 - `src/data/DataSourceManager.h/.cpp` — new; composes sources, implements `IDataSource`
-- `src/envoy/EnvoyDataSource.h/.cpp` — new; polls Envoy local API, writes to `SensorRepository`
-- `src/envoy/EnvoyMappings.h` — new; documents endpoint structure and sensor ID bindings
-- `src/mqtt/Topics.h` — `Envoy` namespace removed; MQTT covers weather sensors only
-- `src/mqtt/TopicMappings.cpp` — solar rows removed
-- `src/mqtt/TopicMappings.h` — `SolarSensorIds.h` include removed
+- `src/data/sources/api/ApiDataSource.h/.cpp` — new; polls Envoy local API, writes to `SensorRepository`
+- `src/data/sources/api/ApiMappings.h` — new; documents endpoint structure and sensor ID bindings
+- `src/data/sources/mqtt/Topics.h` — `Envoy` namespace removed; MQTT covers weather sensors only
+- `src/data/sources/mqtt/TopicMappings.cpp` — solar rows removed
+- `src/data/sources/mqtt/TopicMappings.h` — `SolarSensorIds.h` include removed
 - `src/config/secrets.h` — `EnvoySecrets::HOST` added
 - `src/config/config_defaults.h` — `CFG_ENVOY_POLL_MS` added (default 10 000 ms)
 - `src/config/config.h` — `EnvoyConfig` namespace added
@@ -786,7 +786,7 @@ Total household consumption (production + net import) is the one value not direc
 ## Data Flow (current)
 
 ```text
-MqttDataSource          EnvoyDataSource
+MqttDataSource          ApiDataSource
 (weather — MQTT push)   (solar — HTTP poll, 10 s)
         │                       │
         └───────────┬───────────┘
