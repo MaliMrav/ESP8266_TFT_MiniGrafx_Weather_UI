@@ -2,302 +2,286 @@
 
 ## Overview
 
-The data layer separates **where observations come from** from **what the application knows about them** and **how they are presented**.
+The data layer separates **where observations come from** from **how the application consumes them**.
 
-Any data provider implements `IDataSource` and writes observations through `SensorRepository`. Screens do not know which source supplied an observation.
+A data source provides observations through the common `IDataSource` contract.
 
-The source tree is organised by **source mechanism**, not by product, device, screen, or domain.
+`SensorRepository` is the shared runtime store.
 
-```text
-src/data/
-├── IDataSource.h
-├── DataSourceManager.h
-├── DataSourceManager.cpp
-└── sources/
-    ├── mqtt/
-    └── api/
-```
+Screens consume the repository.
 
-Weather and Solar are domains. MQTT and API are source mechanisms.
+No Screen needs to know whether its observations came from MQTT, an API, a local sensor, serial, Modbus, or another future source.
 
 ---
 
 ## Flow
 
 ```text
-┌─────────────────────┐   ┌─────────────────────┐
-│   MqttDataSource    │   │    ApiDataSource    │
-│    MQTT source      │   │     API source      │
-│  push — broker msg  │   │  pull — API poll    │
-└──────────┬──────────┘   └──────────┬──────────┘
-           │                         │
-           └────────────┬────────────┘
-                        │ both implement IDataSource
-                        ▼
-           ┌────────────────────────┐
-           │   DataSourceManager    │
-           │  delegates begin/loop │
-           └────────────┬───────────┘
-                        │
-                        ▼
-           ┌────────────────────────────────┐
-           │        SensorRepository        │
-           │     flat runtime sensor store  │
-           └────────────┬───────────────────┘
-                        │
-              ┌─────────┴──────────┐
-              ▼                    ▼
-     ┌────────────────┐   ┌────────────────┐
-     │ WeatherScreen  │   │  SolarScreen   │
-     └────────────────┘   └────────────────┘
+External System
+      │
+      ▼
+Data Source
+      │
+      ▼
+Domain Mapping
+      │
+      ▼
+SensorRepository
+      │
+      ▼
+Application Screen
+```
+
+Multiple sources may coexist:
+
+```text
+                     DataSourceManager
+                            │
+              ┌─────────────┴─────────────┐
+              ▼                           ▼
+        MqttDataSource              ApiDataSource
+              │                           │
+         TopicMappings               ApiMappings
+              │                           │
+              └─────────────┬─────────────┘
+                            ▼
+                    SensorRepository
+                            │
+                  ┌─────────┴─────────┐
+                  ▼                   ▼
+           WeatherScreen        SolarScreen
 ```
 
 ---
 
 ## IDataSource
 
-`src/data/IDataSource.h`
-
 `IDataSource` is the contract every data provider implements.
 
-It exposes only:
+Its job is limited to source lifecycle and observation delivery.
 
-```cpp
-begin()
-loop()
-```
-
-The source establishes its own connection, polls or receives data, and writes observations to `SensorRepository`.
-
-It has no knowledge of screens or presentation.
-
-Examples include:
-
-- MQTT
-- API
-- Serial
-- Modbus
-- local sensor interfaces
+The application does not need to know which concrete source is behind the contract.
 
 ---
 
 ## DataSourceManager
 
-`src/data/DataSourceManager.h`
+`DataSourceManager` composes multiple `IDataSource` implementations into one source capability.
 
-`DataSourceManager` composes multiple `IDataSource` implementations into one source.
+The composition root decides which sources are active for a particular build or device.
 
-```cpp
-DataSourceManager dataSources;
-
-dataSources.add(mqttData);
-dataSources.add(apiData);
-```
-
-`SystemManager` therefore depends only on `IDataSource`.
-
-Adding or removing a concrete source does not require `SystemManager` to understand that source.
+The rest of the application does not need to know.
 
 ---
 
-## MqttDataSource
+## Source Mechanisms
 
-`src/data/sources/mqtt/MqttDataSource.h`
-
-`MqttDataSource` implements the MQTT source mechanism.
-
-It:
-
-- connects to the MQTT broker
-- subscribes to the configured topics
-- parses incoming payloads
-- maps payloads to domain-owned sensor IDs
-- writes observations to `SensorRepository`
-- reconnects when the broker connection is lost
-
-It does not know what Weather or Solar means to the UI.
-
-The topic-to-sensor mapping is defined by `TopicMappings`.
-
-One MQTT source may provide observations for multiple domains.
-
----
-
-## ApiDataSource
-
-`src/data/sources/api/ApiDataSource.h`
-
-`ApiDataSource` implements the API source mechanism.
-
-It:
-
-- connects to the configured API
-- retrieves configured API resources
-- extracts mapped observations
-- writes those observations to `SensorRepository`
-
-Provider-specific endpoint paths and response-field locations are isolated in `ApiMappings.h`.
-
-The API source therefore describes **how to communicate with an API**, while the mapping describes the current external API contract.
-
-A future API provider can replace or extend the mapping without changing the domain sensor IDs or screen contracts.
-
----
-
-## SensorRepository
-
-`src/models/SensorRepository.h`
-
-`SensorRepository` is the runtime store for observations.
-
-It remains a flat store indexed by `uint8_t` sensor IDs.
-
-Domain ownership is not expressed by array position.
-
-Instead:
+Sources are organised by **mechanism**, not by product.
 
 ```text
-models/
-├── WeatherSensorIds.h
-└── SolarSensorIds.h
+src/data/sources/
+├── mqtt/
+└── api/
 ```
 
-declare the IDs belonging to each domain.
+Future mechanisms may include:
 
-A screen references the explicit IDs it needs.
+```text
+serial/
+modbus/
+websocket/
+```
 
-A data source writes to the same explicit IDs.
-
-No source or screen relies on ranges such as "the first five sensors belong to Weather".
-
----
-
-## TopicMappings
-
-`src/data/sources/mqtt/TopicMappings.h`
-
-`TopicMappings` binds MQTT topics to domain-owned sensor IDs and field types.
+A product or external system is not itself the architectural source category.
 
 For example:
 
 ```text
-MQTT topic
-    │
-    ▼
-TopicMapping
-    ├── topic
-    ├── sensorId
-    └── field
-            │
-            ▼
-    SensorRepository
+API
+ ├── Envoy
+ ├── AlphaESS
+ └── another provider
 ```
 
-The mapping table can contain Weather and Solar entries together.
-
-`MqttDataSource` does not need to change when a new domain is added; only the mapping table and the appropriate domain sensor IDs need to change.
+The API source mechanism remains the boundary.
 
 ---
 
-## ApiMappings
+## MQTT Data Source
 
-`src/data/sources/api/ApiMappings.h`
+`MqttDataSource` consumes MQTT messages and maps them to domain-owned sensor IDs.
 
-`ApiMappings` isolates the current provider's API resources and response fields from the API source mechanism.
+It knows:
 
-This is deliberately a mapping boundary rather than a new domain abstraction.
+- MQTT connection details
+- subscriptions
+- payload parsing
+- topic mappings
 
-The current API mapping supplies the Solar observations required by the project.
+It does not know:
 
-If the external API changes, its endpoint and field mapping can change without changing:
+- WeatherScreen
+- SolarScreen
+- screen layout
+- UI behaviour
 
-- `SensorRepository`
-- `SolarSensorIds.h`
-- `SolarScreen`
-- `IDataSource`
-
----
-
-## Why the Source Tree Is Organised This Way
-
-The source tree deliberately separates three different concepts:
+The same MQTT source can populate multiple domains:
 
 ```text
-Source mechanism
-    MQTT
-    API
-    Serial
-    Modbus
-        │
-        ▼
-Observation
-        │
-        ▼
-Domain identity
-    Weather
-    Solar
-        │
-        ▼
-SensorRepository
-        │
-        ▼
-Presentation
-    WeatherScreen
-    SolarScreen
+MqttDataSource
+    │
+    ├── Weather topic mappings
+    └── Solar topic mappings
 ```
 
-The source mechanism answers:
-
-> **How did we obtain the observation?**
-
-The domain identity answers:
-
-> **What observation is this?**
-
-The screen answers:
-
-> **How should this information be presented and interpreted?**
-
-Those responsibilities should not be collapsed into a single class or directory.
+`TopicMappings` is the translation table between external MQTT topics and domain-owned sensor IDs.
 
 ---
 
-## Adding a New Data Source
+## API Data Source
 
-1. Create an `IDataSource` implementation under the appropriate source-mechanism directory.
-2. Establish or poll the source in `begin()` / `loop()`.
-3. Write observations through `SensorRepository` using domain-owned sensor IDs.
-4. Register the source in `main.cpp` through `DataSourceManager`.
+`ApiDataSource` provides the API-backed source mechanism.
 
-No screen changes are required merely because a different source supplies the data.
+Its responsibility is communication with an external API and conversion of API responses into observations.
 
----
+The current provider-specific endpoint knowledge belongs in the API mapping layer rather than in the source tree's top-level architecture.
 
-## Adding a New Sensor to an Existing Source
-
-For MQTT:
-
-1. Add the domain-owned sensor ID.
-2. Add its repository tile/configuration.
-3. Add its MQTT topic mapping.
-
-`MqttDataSource` itself remains unchanged.
-
-For an API-backed observation:
-
-1. Add the domain-owned sensor ID.
-2. Add its repository tile/configuration.
-3. Add or update the appropriate API mapping/extraction.
-
-`ApiDataSource` itself should remain a source-mechanism implementation rather than becoming domain-specific.
+An API-backed implementation might talk to Envoy today and AlphaESS tomorrow without changing the domain model or screen architecture.
 
 ---
 
-## Design Principles Applied
+## Domain Sensor Identity
 
-- **One Source of Truth** — `SensorRepository` is the runtime store.
-- **Separation of Responsibilities** — source mechanisms, domain identity, and presentation remain separate.
-- **Open for Extension** — new source mechanisms and domains can be added without restructuring existing screens.
-- **Dependency Inversion** — `SystemManager` consumes `IDataSource`, not concrete sources.
-- **No Positional Coupling** — screens and sources use explicit domain-owned sensor IDs.
-- **Protocol, Not Product** — the source tree describes MQTT/API/Serial/Modbus capabilities, not Enphase/AlphaESS or individual devices.
+Sensor identity belongs to the domain.
+
+Current domain contracts include:
+
+```text
+WeatherSensorIds.h
+SolarSensorIds.h
+```
+
+Each declares stable integer IDs.
+
+`SensorRepository` remains a flat indexed store.
+
+The important relationship is:
+
+```text
+Domain
+   │
+   └── owns sensor identity
+             │
+             ▼
+       SensorRepository
+             ▲
+             │
+       Data sources
+```
+
+This removes positional coupling.
+
+A Screen or source must use explicit IDs rather than assuming that a domain occupies a range of storage slots.
+
+---
+
+## Solar Data
+
+Solar is a domain, not a data source.
+
+The current Solar domain includes:
+
+```text
+Production
+Consumption
+Export
+Battery
+```
+
+with current and today's values.
+
+Those observations may be supplied by MQTT or an API.
+
+The Solar Screen does not change when the source mechanism changes.
+
+---
+
+## Platform Constraints
+
+The ESP8266 has a constrained runtime heap.
+
+TLS-backed HTTPS can consume substantial memory and compete with the display framebuffer and MQTT stack.
+
+This is a platform constraint, not a Solar-domain constraint.
+
+Source composition can therefore differ by target hardware without changing the domain or repository model.
+
+---
+
+## Retained MQTT Data
+
+MQTT is push-based.
+
+A newly connected device may otherwise wait until the publisher sends its next update.
+
+Retained messages allow the broker to deliver the last known value immediately to a new subscriber.
+
+This avoids introducing a device-side cache merely to compensate for source timing.
+
+> **The source should provide a current observation as early as reasonably possible.**
+
+---
+
+## Adding a New Domain
+
+A new domain should be able to introduce:
+
+```text
+NewDomainSensorIds.h
+NewDomainScreen
+optional MQTT mappings
+optional API mappings
+```
+
+without modifying unrelated domains.
+
+The domain owns its identity.
+
+The repository provides storage.
+
+The source mechanism provides observations.
+
+The Screen presents them.
+
+---
+
+## Adding a New Source Mechanism
+
+A future source should follow:
+
+```text
+src/data/sources/<mechanism>/
+```
+
+and implement `IDataSource`.
+
+Examples:
+
+```text
+mqtt/
+api/
+serial/
+modbus/
+```
+
+A new source mechanism should not require changes to existing Screens merely because it supplies the same domain observations through a different transport.
+
+---
+
+## Architectural Principles
+
+- **One Responsibility Per Capability** — sources obtain/transport observations; the repository stores them; Screens present them.
+- **Source Independence** — domains do not depend on a particular transport or product.
+- **Domain-Owned Identity** — sensor IDs live with the domain that owns the observation.
+- **No Positional Coupling** — Screens and sources use explicit IDs rather than array ranges.
+- **Composition Over Knowledge** — `DataSourceManager` composes sources without making the application depend on concrete implementations.

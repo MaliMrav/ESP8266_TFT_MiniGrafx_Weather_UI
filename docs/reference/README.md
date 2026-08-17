@@ -2,7 +2,7 @@
 
 This directory contains stable technical reference material.
 
-Unlike the architectural journey, these documents are not primarily chronological. They describe the current design of specific areas of the system.
+Unlike the architectural journey, these documents are not primarily chronological. They describe how specific areas of the system currently work.
 
 ## Documents
 
