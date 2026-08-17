@@ -777,7 +777,7 @@ Total household consumption (production + net import) is the one value not direc
 - `src/data/sources/mqtt/TopicMappings.cpp` — solar rows removed
 - `src/data/sources/mqtt/TopicMappings.h` — `SolarSensorIds.h` include removed
 - `src/config/secrets.h` — `EnvoySecrets::HOST` added
-- `src/config/config_defaults.h` — `CFG_ENVOY_POLL_MS` added (default 10 000 ms)
+- `src/config/config_defaults.h` — `CFG_API_POLL_MS` added (default 10 000 ms)
 - `src/config/config.h` — `EnvoyConfig` namespace added
 - `src/config/config_override.h` — Envoy section added
 - `src/config/secrets.example.h` — `EnvoySecrets` added

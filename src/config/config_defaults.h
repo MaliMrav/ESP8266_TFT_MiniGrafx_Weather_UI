@@ -297,16 +297,3 @@
 // #define DEBUG_OVERLAY
 
 
-// -----------------------------------------------------------------------------
-// Envoy Debug Overlay
-// -----------------------------------------------------------------------------
-//
-// When enabled, a three-line diagnostic bar is rendered at the bottom of
-// SolarScreen showing the last HTTP status code and JSON parse result for
-// each Envoy endpoint. Useful when no serial connection is available.
-//
-// Disabled by default. Enable in config_override.h by uncommenting:
-//   #define ENVOY_DEBUG
-//
-// Compiles away completely when not defined — zero overhead in production.
-// #define ENVOY_DEBUG
