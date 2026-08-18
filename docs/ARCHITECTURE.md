@@ -150,61 +150,227 @@ It deliberately does not become an intelligence layer.
 
 ## Multiple Sources, One Contract
 
-A real system rarely has a single data source. Weather sensors may publish to MQTT. A solar gateway may expose a local HTTP API. A future room sensor may sit on I2C.
+A real application rarely has a single data source.
 
-The `IDataSource` interface is the contract. `DataSourceManager` composes multiple implementations into one, so `SystemManager` always holds a single `IDataSource&` regardless of how many sources are running.
-
-Sources are registered in `main.cpp` before the system starts:
+A Screen may consume observations from several independent mechanisms at the same time:
 
 ```text
-main.cpp
-  │
-  ├── dataSources.add(mqttData)    ← weather sensors via MQTT broker
-  └── dataSources.add(envoyData)   ← solar sensors via Envoy local API
-              │
-              ▼
-       DataSourceManager
-              │  implements IDataSource
-              ▼
-       SystemManager
+                     DataSourceManager
+                            │
+              ┌─────────────┼─────────────┐
+              ▼             ▼             ▼
+        MqttDataSource   Local I/O     ApiDataSource
+              │             │             │
+         TopicMappings   I2C / OneWire  ApiMappings
+              │             │             │
+              └─────────────┼─────────────┘
+                            ▼
+                    SensorRepository
+                            │
+                  ┌─────────┴─────────┐
+                  ▼                   ▼
+             WeatherScreen        SolarScreen
 ```
 
-Neither source knows about the other. `SystemManager` does not know how many sources exist. Adding a new source requires no changes beyond `main.cpp` and the new source class itself.
+The same model scales to a smart wall panel:
 
-This is the data boundary working correctly:
+```text
+Room temperature ──► I2C
+Room humidity ──────► I2C
+Weather forecast ───► API
+Light state ────────► MQTT
+HVAC state ─────────► Modbus
+Solar production ───► MQTT / API
+                  \    |    /
+                   \   |   /
+                    ▼  ▼  ▼
+                SensorRepository
+                       │
+                       ▼
+                SmartWallPanel
+```
 
-> **The application consumes information. It does not care how many transports delivered it.**
+`IDataSource` is the source contract. `DataSourceManager` composes source implementations. Neither knows which Screen will consume the resulting observations.
+
+The important rule is:
+
+> **A Screen consumes observations by identity, not by source.**
 
 ---
 
-## Sensor Domains
+## Domain Observation Identity
 
-Sensor IDs are not a global resource.
+The original design used a flat integer ID as both domain identity and repository position.
 
-The original design used a single flat enum in `SensorIds.h`. Every sensor in the system — weather, solar, future room sensors — lived in one file. Adding a sensor to any domain required touching a file that belonged to no domain in particular.
+That is a hidden coupling.
 
-The pressure that exposed this: when a second screen domain (solar) was added, the weather screen had to know the total count of weather sensors to avoid bleeding into solar tiles. The count was implicit in array position, not explicit in the code.
-
-The fix is to make domain ownership explicit:
+A value such as:
 
 ```text
-WeatherSensorIds.h    — owned by the weather domain
-SolarSensorIds.h      — owned by the solar domain
-RoomSensorIds.h       — owned by a future room domain
+5
 ```
 
-Each domain declares its own `constexpr uint8_t` ID constants. `SensorRepository` is a flat indexed store with a fixed capacity (`MAX_SENSORS`). It has no knowledge of domains.
+cannot tell a developer what it means. Worse, its meaning can become accidentally tied to array position or insertion order.
 
-The result:
+The stronger model separates three concerns:
 
-- A screen includes only the domain header it needs.
-- Adding a room sensor panel requires no changes to weather or solar files.
-- `SensorRepository.cpp` uses designated initialisers to make the slot assignment explicit and auditable.
-- A `static_assert` validates that all assigned IDs fit within capacity.
+```text
+ObservationKey
+      │
+      ▼
+Runtime registration / resolution
+      │
+      ▼
+ObservationHandle
+      │
+      ▼
+Repository storage slot
+```
 
-This is the same principle as the display and input boundaries applied to data:
+### ObservationKey
 
-> **Each domain owns its own identity. The repository provides the store. Neither needs to know about the other's internals.**
+A stable, human-meaningful identity owned by the domain.
+
+Examples:
+
+```text
+solar.power.production
+solar.power.consumption
+room.temperature
+room.humidity
+livingroom.lamp.state
+```
+
+The key describes the knowledge the application is interested in.
+
+### ObservationHandle
+
+An opaque runtime reference allocated by the repository or registration layer.
+
+Application code does not invent its numeric value.
+
+### Storage slot
+
+The physical location used by `SensorRepository`.
+
+It is an implementation detail.
+
+The repository may use an array, pool, indexed record list, or another compact representation without exposing that storage scheme as domain architecture.
+
+Therefore:
+
+> **Identity describes meaning. Storage describes implementation.**
+
+Adding an observation must never require renumbering an existing observation.
+
+---
+
+## Domain Ownership
+
+Domains still own the vocabulary of observations they introduce, but they no longer own storage indices.
+
+For example:
+
+```text
+Weather domain
+    └── weather.* ObservationKeys
+
+Solar domain
+    └── solar.* ObservationKeys
+
+Room domain
+    └── room.* ObservationKeys
+```
+
+A Screen may use observations from several domains at once.
+
+A Solar screen could display:
+
+```text
+solar.power.production
+solar.power.battery
+room.temperature
+weather.forecast.condition
+```
+
+without changing the meaning of any of those identities.
+
+This removes positional coupling while also avoiding the opposite mistake of making every domain responsible for repository storage layout.
+
+---
+
+## Source Mechanisms, Not Products
+
+Data sources are organised by reusable source mechanism:
+
+```text
+src/data/sources/
+├── mqtt/
+├── api/
+├── serial/
+└── modbus/
+```
+
+A product or vendor is not itself a source category.
+
+For example, an API-backed source may currently communicate with an Envoy, but the architectural capability is still:
+
+```text
+API
+```
+
+The same mechanism may later communicate with AlphaESS or another API provider.
+
+This keeps product knowledge below the source-mechanism boundary.
+
+The desired flow is:
+
+```text
+External system
+      │
+      ▼
+Source mechanism
+      │
+      ▼
+Source-specific mapping
+      │
+      ▼
+ObservationKey
+      │
+      ▼
+SensorRepository
+      │
+      ▼
+Screen / Application
+```
+
+---
+
+## Dynamic Source Resolution
+
+A stable observation identity does not require a single permanent source.
+
+A runtime may have several candidates for the same ObservationKey:
+
+```text
+room.temperature
+      │
+      ├── local BME280
+      ├── MQTT / Home Assistant
+      └── Modbus controller
+```
+
+Resolution can eventually apply a policy based on:
+
+- source availability
+- source priority
+- freshness
+- redundancy
+- platform capability
+
+Round-robin is one possible policy where equivalent sources genuinely exist, but it is not a default architectural assumption. The important abstraction is:
+
+> **Identity is stable; source resolution is dynamic.**
 
 ---
 

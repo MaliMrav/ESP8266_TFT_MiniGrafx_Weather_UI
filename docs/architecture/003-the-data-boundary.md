@@ -109,3 +109,54 @@ It observes.
 It transforms observations into useful information.
 
 It leaves reasoning, automation and decision-making to systems above it.
+
+
+## A Further Refinement: Identity Is Not Storage
+
+The original data boundary separated the application from its sources, but the Solar expansion revealed a second coupling inside the repository itself.
+
+A numeric sensor ID can accidentally become both:
+
+- the identity of an observation; and
+- its position in a storage array.
+
+Those are different responsibilities.
+
+A larger application may place observations from several domains on the same Screen:
+
+```text
+Smart Wall Panel
+    ├── room.temperature        ← I2C
+    ├── room.humidity           ← I2C
+    ├── weather.forecast        ← API
+    ├── solar.power.production  ← MQTT
+    └── livingroom.lamp.state   ← MQTT
+```
+
+The Screen should not need to know which source provided each observation, and it should not need to know where the repository stores it.
+
+The stronger boundary is therefore:
+
+```text
+ObservationKey
+      │
+      ▼
+Source resolution
+      │
+      ▼
+ObservationHandle
+      │
+      ▼
+Repository storage
+      │
+      ▼
+Application
+```
+
+This gives us the rule:
+
+> **Identity describes meaning. Storage describes implementation.**
+
+The runtime is free to allocate handles and storage slots as it sees fit.
+
+Adding a new observation must not require renumbering an existing one.

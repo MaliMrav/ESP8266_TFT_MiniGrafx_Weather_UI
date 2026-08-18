@@ -480,3 +480,129 @@ If a future design forces us to challenge one of these principles, the discussio
 Good engineering is not about following rules.
 
 It is about understanding why they exist.
+
+
+# 8. Identity Is Semantic
+
+Framework objects should be identified by what they mean, not by where they happen to be stored.
+
+For observations, the framework should expose a human-meaningful `ObservationKey`, such as:
+
+```text
+room.temperature
+room.humidity
+solar.power.production
+livingroom.lamp.state
+```
+
+The key is the identity understood by people and domains.
+
+It is not a storage index.
+
+A developer should never need to remember that `17` means the living-room lamp merely because an array happens to contain it at slot 17.
+
+> **Identity describes meaning. Storage describes implementation.**
+
+# 9. Runtime Handles Are Implementation Details
+
+A framework may need compact runtime identifiers or storage slots for efficiency.
+
+Those values should be allocated by the runtime and remain opaque to application and domain code.
+
+The conceptual relationship is:
+
+```text
+ObservationKey
+      │
+      ▼
+Runtime registration / resolution
+      │
+      ▼
+ObservationHandle
+      │
+      ▼
+Repository storage slot
+```
+
+The storage slot may change without changing the observation's identity.
+
+Adding a new observation must never require renumbering existing observations.
+
+# 10. Identity Is Stable; Resolution Is Dynamic
+
+A stable identity does not require a permanently fixed source.
+
+An observation may be available from more than one source:
+
+```text
+room.temperature
+      │
+      ├── local BME280
+      ├── MQTT / Home Assistant
+      └── Modbus controller
+```
+
+The identity remains stable while the runtime can select a source according to availability, priority, freshness, redundancy, or another explicit policy.
+
+The framework should therefore separate:
+
+```text
+What is this?
+        │
+        ▼
+ObservationKey
+
+Where can I obtain it?
+        │
+        ▼
+Source resolution
+```
+
+# 11. Sources Are Mechanisms, Not Products
+
+The source tree should describe reusable mechanisms:
+
+```text
+sources/
+├── mqtt/
+├── api/
+├── serial/
+└── modbus/
+```
+
+It should not be organised around individual products or vendors:
+
+```text
+sources/
+├── envoy/
+├── alphaess/
+└── ...
+```
+
+A product is knowledge consumed by a source implementation.
+
+The source mechanism is the architectural capability.
+
+This keeps the framework open to different products that communicate through the same mechanism.
+
+# 12. Multiple Sources May Contribute to One Context
+
+A Screen or application context is not required to have a single data source.
+
+A smart wall panel might combine:
+
+```text
+Date / time             → MQTT
+Weather forecast        → API
+Room temperature        → I2C / BME280
+Room humidity           → I2C / BME280
+Light state             → MQTT
+HVAC state              → Modbus
+Solar production        → MQTT or API
+```
+
+All of these observations can converge through the same repository.
+
+The Screen consumes identities, not transports.
+
+> **A context may consume information from many sources without becoming a data-source aggregator.**
