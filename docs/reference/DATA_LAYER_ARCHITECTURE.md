@@ -2,148 +2,245 @@
 
 ## Overview
 
-The data layer decouples data providers from the repository and UI. Any data source — MQTT, HTTP, local I2C sensor — implements the same `IDataSource` interface and writes through the same repository API. Screens are never aware of where data came from, or how many sources are running.
+The data layer separates **what an observation means** from **how it is obtained**
+and **where it is stored**.
 
----
-
-## Flow
-
-```
-┌─────────────────────┐   ┌─────────────────────┐
-│   MqttDataSource    │   │  EnvoyDataSource     │
-│  (weather sensors)  │   │  (solar sensors)     │
-│  push — broker msg  │   │  pull — HTTP poll    │
-└──────────┬──────────┘   └──────────┬───────────┘
-           │                         │
-           └────────────┬────────────┘
-                        │ both implement IDataSource
-                        ▼
-           ┌────────────────────────┐
-           │   DataSourceManager    │  implements IDataSource
-           │   delegates begin/loop │  SystemManager sees only this
-           └────────────┬───────────┘
-                        │ writes via typed API
-                        ▼
-           ┌────────────────────────────────┐
-           │        SensorRepository        │
-           │  setValue(uint8_t id, float)   │
-           └────────────┬───────────────────┘
-                        │ read by
-              ┌─────────┴──────────┐
-              ▼                    ▼
-     ┌────────────────┐   ┌────────────────┐
-     │ WeatherScreen  │   │  SolarScreen   │
-     └────────────────┘   └────────────────┘
+```text
+External / Local Source
+        │
+        ▼
+   Source mechanism
+        │
+        ▼
+ Source-specific mapping
+        │
+        ▼
+   ObservationKey
+        │
+        ▼
+ Runtime registration / resolution
+        │
+        ▼
+ ObservationHandle
+        │
+        ▼
+ SensorRepository storage
+        │
+        ▼
+      Screen
 ```
 
----
+A Screen consumes observations by identity, not by source.
 
-## Components
+## Shared Source Contract
 
-### IDataSource — `src/data/IDataSource.h`
+`IDataSource` is the common contract for data providers. `DataSourceManager`
+composes concrete sources and presents them as one data-source capability to
+the application.
 
-The interface every data provider implements. Two methods: `begin()` and `loop()`. `SystemManager` holds a single `IDataSource&` — it never knows what kind of source, or how many, are behind it.
+A single Screen may consume observations from several mechanisms at once:
 
-### DataSourceManager — `src/data/DataSourceManager.h`
-
-Composes multiple `IDataSource` implementations into one. Implements `IDataSource` itself, so `SystemManager` requires no changes when sources are added or removed. Sources are registered in `main.cpp` before `SystemManager::begin()` is called.
-
-```cpp
-DataSourceManager dataSources;
-dataSources.add(mqttData);
-dataSources.add(envoyData);
-SystemManager::begin(..., dataSources);
+```text
+                     DataSourceManager
+                            │
+          ┌─────────────────┼─────────────────┐
+          ▼                 ▼                 ▼
+        MQTT              I²C               API
+          │                 │                 │
+     TopicMappings     Local mapping     ApiMappings
+          │                 │                 │
+          └─────────────────┼─────────────────┘
+                            ▼
+                    SensorRepository
 ```
 
-### MqttDataSource — `src/mqtt/MqttDataSource.h`
+## Source Mechanisms, Not Products
 
-Covers weather sensors. Connects via PubSubClient, subscribes to topics defined in `TopicMappings`, parses payloads, and writes to `SensorRepository`. Reconnects automatically. Has no knowledge of WiFi, display, screens, or the Envoy.
+Data sources are organised by mechanism, not by product or vendor:
 
-### EnvoyDataSource — `src/envoy/EnvoyDataSource.h`
-
-Covers solar/energy sensors. Polls two Enphase Envoy local API endpoints on a configurable interval (`CFG_ENVOY_POLL_MS`, default 10 s). No authentication required. No cloud dependency. No HA dependency.
-
-| Endpoint | Data |
-|---|---|
-| `GET /ivp/meters/readings` | Real-time power (W) — production CT `[0]`, consumption CT `[1]` |
-| `GET /api/v1/production` | Today's energy totals (Wh) — production and consumption |
-
-Writes to `SensorRepository` using sensor IDs from `SolarSensorIds.h`. Has no knowledge of MQTT, display, or screens.
-
-### SensorRepository — `src/models/SensorRepository.h`
-
-The single source of truth for all sensor data. A flat indexed store keyed by `uint8_t` sensor IDs declared per-domain. Exposes a typed write API — data sources never touch internal array indices directly.
-
-### TopicMappings — `src/mqtt/TopicMappings.h`
-
-A flat table binding MQTT topic strings to sensor IDs and field types (`VALUE`, `MIN`, `MAX`, `TREND`). Covers weather sensors only. Solar data has no MQTT entries — it is sourced exclusively from the Envoy local API.
-
----
-
-## Why Two Sources?
-
-The weather sensors (Kitchen, Pergola) publish to an MQTT broker. The Envoy solar gateway exposes a local HTTP API. These are different transports serving different domains.
-
-The alternative — routing Envoy data through HA and then through MQTT — would introduce two unnecessary dependencies: HA must be running, and manual MQTT topics must be maintained. The Envoy local API is available on the LAN with no intermediary.
-
-`DataSourceManager` allows both transports to coexist without either knowing about the other, and without `SystemManager` knowing how many sources exist.
-
----
-
-## Adding a New Data Source
-
-1. Create a class implementing `IDataSource` in an appropriate directory.
-2. In `begin()`, establish any persistent connection.
-3. In `loop()`, check a poll interval (if pull-based) or handle incoming data (if push-based), then write to `SensorRepository` by sensor ID.
-4. In `main.cpp`, instantiate the source and call `dataSources.add(yourSource)`.
-
-No changes to `SystemManager`, `SensorRepository`, or any screen.
-
-```cpp
-// Example: a future local I2C temperature sensor
-class I2CSensorSource : public IDataSource
-{
-public:
-    void begin() override { sensor_.begin(); }
-    void loop()  override
-    {
-        if (millis() - last_ < 5000) return;
-        last_ = millis();
-        SensorRepository::setValue(SENSOR_ROOM_TEMP, sensor_.readTemperature());
-    }
-private:
-    SomeI2CSensor sensor_;
-    unsigned long last_ = 0;
-};
+```text
+src/data/sources/
+├── mqtt/
+└── api/
 ```
 
----
+Future mechanisms may include `serial/`, `modbus/`, or `websocket/`. An API
+source may currently communicate with Envoy, but the architectural capability
+is `api`. The same mechanism may later communicate with AlphaESS or another
+provider. Product-specific knowledge belongs inside source mappings, not in the
+source tree's top-level architecture.
 
-## Adding a New MQTT Sensor
+## Observation Identity
 
-Only three files change:
+The old model used an integer as both domain identity and repository position.
+That is no longer the architecture.
 
-1. Add a `constexpr uint8_t` ID to the appropriate domain header (e.g. `WeatherSensorIds.h`).
-2. Add its display tile to `SensorRepository.cpp` using a designated initialiser.
-3. Add its topic rows to `TopicMappings.cpp`.
+```text
+ObservationKey
+      │
+      ▼
+Source resolution
+      │
+      ▼
+ObservationHandle
+      │
+      ▼
+Repository storage slot
+```
 
-`MqttDataSource` itself does not change.
+### ObservationKey
 
----
+A stable, human-meaningful identity for an observation. Where an existing external
+identity already provides a good semantic name, such as a Home Assistant entity
+ID, Telemetry may use that identity directly.
 
-## Adding a New Envoy Field
+Examples:
 
-Only two files change:
+```text
+sensor.bar_switch_panel_energy_power
+sensor.envoy_current_power_production
+room.temperature
+solar.power.production
+```
 
-1. Add a `constexpr uint8_t` ID to `SolarSensorIds.h`.
-2. Add its display tile to `SensorRepository.cpp`.
-3. Add its extraction in `EnvoyDataSource.cpp` (`fetchMeters()` or `fetchProduction()`).
+An `ObservationKey` is not a repository slot, runtime storage index, or
+source-specific transport address.
 
----
+### ObservationHandle
 
-## Design Principles Applied
+An opaque runtime reference allocated by the registration/resolution layer. The
+application does not invent its value.
 
-- **Single Responsibility** — `MqttDataSource` knows MQTT; `EnvoyDataSource` knows the Envoy API; `SensorRepository` owns storage; screens own display.
-- **Open/Closed** — extend with new data sources without modifying existing code.
-- **Dependency Inversion** — `SystemManager` depends on `IDataSource`, not any concrete implementation.
-- **Source independence** — sensors do not need to be registered in HA or any broker before the UI can consume them.
+### Repository storage slot
+
+An implementation detail of `SensorRepository`. The repository may use compact
+fixed-capacity storage internally, but storage order must never form part of
+domain identity.
+
+> **Identity describes meaning. Storage describes implementation.**
+
+> **Identity is stable; source resolution is dynamic.**
+
+Adding an observation must never require renumbering another observation.
+
+## Multiple Sources for One Observation
+
+The same semantic observation may have several candidate sources:
+
+```text
+room.temperature
+      │
+      ├── local BME280
+      ├── MQTT / Home Assistant
+      └── Modbus controller
+```
+
+Source selection may eventually consider availability, priority, freshness,
+health and explicit configuration. Round-robin is one possible policy where
+several sources are genuinely equivalent; it is not part of identity.
+
+## Multiple Sources on One Screen
+
+A Screen may consume observations from several independent mechanisms. A Smart
+Wall Panel could combine local I²C or One-Wire measurements, API weather data,
+MQTT light state and MQTT/API solar data without changing the Screen's domain
+model.
+
+The Screen consumes semantic observations, not source-specific data.
+
+## MQTT
+
+`MqttDataSource` translates MQTT messages into observations through `TopicMappings`.
+It can populate multiple domains through the same mechanism.
+
+```text
+MQTT topic
+    │
+    ▼
+TopicMappings
+    │
+    ▼
+ObservationKey
+    │
+    ▼
+ObservationHandle
+    │
+    ▼
+SensorRepository
+```
+
+## API
+
+`ApiDataSource` provides the API source mechanism. `ApiMappings` contains the
+provider-specific response mapping for the current implementation.
+
+```text
+api/
+    ApiDataSource.*
+    ApiMappings.h
+```
+
+The mechanism remains API even if the current provider is Envoy and a future
+provider is AlphaESS.
+
+## Platform Composition
+
+PlatformIO environments compose the framework for a particular target. The data
+architecture remains the same, but the environment decides which source
+capabilities are instantiated.
+
+```text
+ESP8266 profile
+    └── MQTT + local I/O
+
+ESP32 profile
+    └── MQTT + API/TLS + local I/O + future control capabilities
+```
+
+The ESP8266 is a constrained reference profile, not the architectural ceiling.
+
+> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
+
+## Retained MQTT Data
+
+MQTT is push-based. Retained messages allow a newly connected subscriber to receive
+the latest published value immediately. This avoids device-side caching merely to
+compensate for source timing.
+
+## Future Commands
+
+Interactive applications may eventually publish commands such as:
+
+```text
+livingroom.lamp.set
+hvac.target_temperature.set
+blind.position.set
+```
+
+Command identity is intentionally outside the current ObservationKey contract. If
+command architecture becomes substantial enough, it should be designed explicitly
+in a future sprint.
+
+## Adding a New Source Mechanism
+
+A new source mechanism belongs under `src/data/sources/<mechanism>/` and implements
+`IDataSource`. It should map external data into existing semantic observation
+identities without requiring Screen changes.
+
+## Data-Layer Boundary
+
+```text
+Domain
+    └── defines ObservationKey
+
+Source mechanism
+    └── obtains observations
+
+Resolution / registration
+    └── maps key to runtime handle
+
+Repository
+    └── stores runtime state
+```
+
+This boundary keeps Telemetry reusable across domains, sources and target platforms.

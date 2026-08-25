@@ -50,6 +50,48 @@ The architecture deliberately moves knowledge downward.
 
 ---
 
+## PlatformIO Is the Composition Layer
+
+Telemetry is a framework, not an ESP8266 architecture. The shared source tree
+defines the framework contracts and reusable capabilities. PlatformIO environments
+decide which capabilities a particular build instantiates.
+
+```text
+                         TELEMETRY
+                             │
+             ┌───────────────┴───────────────┐
+             │                               │
+       Shared Framework                 PlatformIO Composition
+             │                               │
+             │                    ┌──────────┴──────────┐
+             │                    ▼                     ▼
+             │              ESP8266 env           ESP32/CYD env
+             │                    │                     │
+             │                    ├── MQTT              ├── MQTT
+             │                    ├── Local I/O         ├── API/TLS
+             │                    ├── Touch             ├── Local I/O
+             │                    └── constrained UI    ├── Touch
+             │                                          ├── Control
+             │                                          └── richer UI
+             │
+             └──── identical contracts and domain model ─────
+```
+
+PlatformIO is therefore part of the composition architecture. The project does
+not create separate `src/platform/esp8266` and `src/platform/esp32` architectures
+merely to select capabilities.
+
+A PlatformIO environment may select the target platform and board, resource
+envelope, libraries, capability build flags, and target-specific source
+composition when required. The shared framework remains the same.
+
+> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
+
+The ESP8266 remains a deliberately constrained reference profile. The fact that a
+capability is impractical on that target does not make it invalid for the framework.
+An expanded ESP32 profile may instantiate API/TLS, richer UI, control and broader
+multi-source composition.
+
 # The Major Boundaries
 
 ## The Display Boundary

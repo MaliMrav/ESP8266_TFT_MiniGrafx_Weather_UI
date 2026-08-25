@@ -53,6 +53,48 @@ The framework exposes them.
 
 Applications consume them.
 
+## Composition Is a Build-Time Decision
+
+PlatformIO environments are the composition mechanism for Telemetry builds.
+
+The framework defines the architecture and its capability contracts. A build
+environment decides which capabilities are instantiated for a particular
+target and resource envelope.
+
+```text
+Telemetry Framework
+        │
+        ▼
+PlatformIO Composition
+        │
+   ┌────┴────┐
+   ▼         ▼
+ESP8266    ESP32
+Profile    Profile
+```
+
+This deliberately avoids creating separate platform architectures such as:
+
+```text
+src/platform/esp8266/
+src/platform/esp32/
+```
+
+The source tree contains the shared framework. PlatformIO selects the concrete
+build composition.
+
+Therefore:
+
+> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
+
+The ESP8266 is a constrained reference profile. Its resource limitations are
+used as a design guardrail for memory discipline, allocation discipline and
+architectural economy. They do not define the framework's architectural ceiling.
+
+An ESP32 profile may instantiate capabilities that the ESP8266 profile does
+not, such as API/TLS, richer UI, control-oriented interaction or additional
+data-source combinations.
+
 # 4. Observations Before Information
 
 Firmware should observe.

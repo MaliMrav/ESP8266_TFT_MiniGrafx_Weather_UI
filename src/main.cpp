@@ -53,7 +53,9 @@ void setup()
 {
     Serial.begin(115200);
 
+#if defined(TELEMETRY_CAPABILITY_MQTT)
     dataSources.add(mqttData);
+#endif
 
     SystemManager::begin(
         display,
