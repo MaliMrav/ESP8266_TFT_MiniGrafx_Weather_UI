@@ -10,6 +10,7 @@ Unlike the architectural journey, these documents are not primarily chronologica
 - [Display Configuration](DISPLAY_CONFIGURATION.md)
 - [Calibration Rules](CALIBRATION_RULES.md)
 - [Touch Profiles](TOUCH_PROFILES.md)
+- [Platform Profiles](PLATFORM_PROFILES.md)
 
 ## Architecture vs Reference
 

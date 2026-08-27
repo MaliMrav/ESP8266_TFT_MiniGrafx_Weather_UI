@@ -53,49 +53,53 @@ The framework exposes them.
 
 Applications consume them.
 
-## Composition Is a Build-Time Decision
+# 4. Platform Profiles
 
-PlatformIO environments are the composition mechanism for Telemetry builds.
+Telemetry remains one framework.
 
-The framework defines the architecture and its capability contracts. A build
-environment decides which capabilities are instantiated for a particular
-target and resource envelope.
+PlatformIO environments instantiate platform-specific capability compositions.
+
+A **platform profile** is a composition of Telemetry capabilities selected for a target's resources and purpose. Platform profiles do not redefine Telemetry's architectural contracts.
+
+The current reference profiles are:
+
+### ESP8266 Reference Profile
+
+> **Observation-oriented, resource-constrained composition.**
+
+It is deliberately conservative. It provides the capabilities appropriate to a lightweight
+observation device, with MQTT as the primary remote data path and local I/O where required.
+
+### ESP32/CYD Reference Profile
+
+> **Observation-and-control-oriented, resource-expanded composition.**
+
+It provides the larger capability envelope required for richer observation, API/TLS
+integration, control, and multi-source applications.
+
+Capabilities that are unnecessary or unsuitable for the ESP8266 are not worked around.
+They are simply not instantiated by the ESP8266 composition.
+
+The governing model is:
 
 ```text
-Telemetry Framework
-        │
-        ▼
-PlatformIO Composition
-        │
-   ┌────┴────┐
-   ▼         ▼
-ESP8266    ESP32
-Profile    Profile
+Architecture
+    │
+    ▼
+Capabilities
+    │
+    ▼
+Composition
+    │
+    ▼
+Target platform
 ```
 
-This deliberately avoids creating separate platform architectures such as:
-
-```text
-src/platform/esp8266/
-src/platform/esp32/
-```
-
-The source tree contains the shared framework. PlatformIO selects the concrete
-build composition.
-
-Therefore:
+The important rule is:
 
 > **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
 
-The ESP8266 is a constrained reference profile. Its resource limitations are
-used as a design guardrail for memory discipline, allocation discipline and
-architectural economy. They do not define the framework's architectural ceiling.
-
-An ESP32 profile may instantiate capabilities that the ESP8266 profile does
-not, such as API/TLS, richer UI, control-oriented interaction or additional
-data-source combinations.
-
-# 4. Observations Before Information
+## 4. Observations Before Information
 
 Firmware should observe.
 

@@ -94,6 +94,30 @@ The implementation changes.
 
 The application does not.
 
+## Platform Composition
+
+Telemetry remains one framework. PlatformIO environments instantiate different capability compositions for different targets.
+
+The ESP8266 is the constrained observation reference profile. The ESP32/CYD is the expanded observation-and-control reference profile.
+
+A capability that is unnecessary or unsuitable for the ESP8266 is not implemented as a workaround. It is simply omitted from that composition.
+
+```text
+Architecture
+    │
+    ▼
+Capabilities
+    │
+    ▼
+Composition
+    │
+    ▼
+Target platform
+```
+
+> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
+
+
 ## The lesson
 
 A data source is a capability.
@@ -160,54 +184,3 @@ This gives us the rule:
 The runtime is free to allocate handles and storage slots as it sees fit.
 
 Adding a new observation must not require renumbering an existing one.
-
-
-## The Build Is a Composition
-
-The source boundary is also independent of target hardware. PlatformIO environments
-compose the shared Telemetry framework for a particular resource envelope.
-
-```text
-Telemetry Framework
-        │
-        ▼
-PlatformIO Composition
-        │
-   ┌────┴────┐
-   ▼         ▼
-ESP8266    ESP32
-Profile    Profile
-```
-
-The ESP8266 is intentionally retained as a constrained reference profile. The
-framework is not constrained to the capabilities that fit comfortably on that
-target. An expanded ESP32 composition may instantiate API/TLS, richer UI, control
-and additional source mechanisms without creating a second architecture.
-
-> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
-
-## A Further Refinement: Identity Is Not Storage
-
-The Solar expansion revealed a second coupling inside the repository itself. A
-numeric sensor ID can accidentally become both the identity of an observation and
-its position in a storage array. Those are different responsibilities.
-
-The stronger boundary is:
-
-```text
-ObservationKey
-      │
-      ▼
-Source resolution
-      │
-      ▼
-ObservationHandle
-      │
-      ▼
-Repository storage
-```
-
-An existing external identity, such as a Home Assistant entity ID, may serve as
-the ObservationKey when it already provides a clear semantic name.
-
-> **Identity describes meaning. Storage describes implementation.**

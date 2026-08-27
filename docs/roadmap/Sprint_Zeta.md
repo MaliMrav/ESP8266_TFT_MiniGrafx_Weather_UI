@@ -2,57 +2,61 @@
 
 ## Objective
 
-> **Separate what an observation means from where it is stored, while allowing multiple independent data sources to contribute to the same application context.**
+> **Separate what an observation means from where it is stored, while allowing multiple independent data sources to contribute to the same application context and allowing each target to instantiate an appropriate capability composition.**
 
 Sprint Epsilon established that a Screen is a contextual interpreter of interaction.
 
 Solar Energy exposed the equivalent pressure in the data layer.
 
-The project now has multiple application domains and multiple possible source mechanisms. A single Screen may consume observations from several sources at the same time, while the same observation may be supplied by different sources on different devices or under different operating conditions.
+The project now has multiple application domains, multiple source mechanisms, and multiple possible target platforms.
 
-The original data model was beginning to encode storage details as domain identity.
+The architectural pressure is therefore no longer simply:
 
-That is the pressure this sprint resolves.
+> "How do we stop Weather and Solar from sharing accidental sensor ranges?"
+
+It is:
+
+> **How do we build one framework in which domain identity, source mechanism, runtime storage, and target capability composition remain independent?**
+
+---
+
+# Architectural Decisions Frozen by This Sprint
+
+Sprint Zeta establishes these principles:
+
+> **Identity describes meaning. Storage describes implementation.**
+
+> **Identity is stable; source resolution is dynamic.**
+
+> **Sources are mechanisms, not products.**
+
+> **A Screen consumes observations by identity, not by source.**
+
+> **Multiple source mechanisms may contribute observations to the same Screen or observation.**
+
+> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
+
+> **PlatformIO environments instantiate platform-specific capability compositions.**
+
+> **ESP8266 is the constrained observation reference profile.**
+
+> **ESP32/CYD is the expanded observation-and-control reference profile.**
+
+Capabilities that are unnecessary or unsuitable for the ESP8266 are not worked around. They are simply not instantiated by the ESP8266 composition.
 
 ---
 
 # The Architectural Pressure
 
-The original Sensor model used small integer constants directly as repository indices:
+The original Sensor model used small integer constants directly as repository indices.
 
-```text
-Weather:
-    0
-    1
-    2
-    3
-    4
+Even after moving constants into per-domain headers, the integer remained both the identity of an observation and its physical storage location.
 
-Solar:
-    5
-    6
-    7
-    ...
-```
+That creates a hidden coupling.
 
-Even after moving the constants into per-domain headers, the integer remained both:
+The Smart Wall Panel thought experiment exposed the deeper problem.
 
-1. the identity of the observation; and
-2. the physical location of that observation in the repository.
-
-That creates an architectural leak.
-
-A developer should be able to ask:
-
-> **What observation is this?**
-
-without also asking:
-
-> **Which array slot did the framework assign it?**
-
-The Smart Wall Panel thought experiment made the pressure explicit.
-
-A single Screen might consume:
+A single Screen may consume observations from several domains and several source mechanisms:
 
 ```text
 room.temperature
@@ -64,7 +68,7 @@ livingroom.lamp.state
 hvac.target_temperature
 ```
 
-while obtaining those observations from:
+while obtaining them from:
 
 ```text
 MQTT
@@ -84,28 +88,21 @@ one domain
 one source
 ```
 
+It must also stop treating repository storage location as semantic identity.
+
 ---
 
 # The Course Correction
 
-The earlier idea of "stable integer IDs per domain" is now superseded.
+The earlier idea of stable integer IDs per domain is superseded.
 
-The new contract is:
-
-> **Domains own stable semantic observation keys. Runtime storage handles are allocated by the framework. Physical storage slots are implementation details.**
-
-The conceptual model is:
+The target model is:
 
 ```text
 ObservationKey
       │
       ▼
 Source resolution
-      │
-      ├── availability
-      ├── priority
-      ├── freshness
-      └── policy
       │
       ▼
 ObservationHandle
@@ -116,91 +113,33 @@ Repository storage slot
 
 These are deliberately different concepts.
 
-### ObservationKey
+## ObservationKey
 
-An `ObservationKey` is a human- and domain-meaningful identity.
+A stable, human-readable semantic identity.
 
-Examples:
-
-```text
-solar.power.production
-solar.power.consumption
-room.temperature
-room.humidity
-livingroom.lamp.state
-hvac.target_temperature
-weather.forecast.condition
-```
-
-The key answers:
-
-> **What observation are we talking about?**
-
-It does not encode storage position.
-
-It does not need to be a developer-invented integer.
-
----
-
-### ObservationHandle
-
-An `ObservationHandle` is an opaque runtime reference allocated by the framework.
-
-The handle answers:
-
-> **Which runtime observation record represents this key right now?**
-
-The application should not need to invent or remember the handle.
-
----
-
-### Repository storage slot
-
-A storage slot is an internal implementation detail.
-
-The slot answers:
-
-> **Where is this record physically stored?**
-
-The repository is free to allocate or reorganise slots without changing the observation's identity.
-
----
-
-# Core Principles
-
-The governing rule is:
-
-> **Identity describes meaning. Storage describes implementation.**
-
-And:
-
-> **Identity is stable; source resolution is dynamic.**
-
-Therefore:
-
-> **Adding an observation must never require renumbering another observation.**
-
-Likewise, changing the source of an observation must not change the observation's identity.
-
-For example:
+Examples may include existing external identities such as Home Assistant entity IDs:
 
 ```text
-room.temperature
-    │
-    ├── BME280 / I²C
-    ├── MQTT / Home Assistant
-    └── Modbus controller
+sensor.bar_switch_panel_energy_power
+sensor.envoy_current_power_production
+sensor.envoy_energy_production_today
 ```
 
-The identity remains:
+The framework does not require a developer to invent a meaningless numeric identifier.
 
-```text
-room.temperature
-```
+The key describes what the observation means.
 
-The source may change.
+## ObservationHandle
 
-The Screen does not.
+An opaque runtime reference allocated by the framework.
+
+The developer does not invent or remember its numeric value.
+
+## Repository Storage Slot
+
+A private implementation detail.
+
+The repository may use compact fixed-capacity embedded storage while keeping storage order completely independent of domain identity.
 
 ---
 
@@ -208,26 +147,9 @@ The Screen does not.
 
 **Status: Complete**
 
-Solar Energy is now a first-class application domain.
+Solar Energy became a first-class application domain.
 
-The Solar Screen consumes observations through `SensorRepository`.
-
-Its current domain includes:
-
-```text
-solar.power.production
-solar.power.consumption
-solar.power.export
-solar.power.battery
-solar.energy.production.today
-solar.energy.consumption.today
-solar.energy.export.today
-solar.energy.battery.today
-```
-
-The Screen does not know which source provided those observations.
-
-The Solar domain is therefore independent of transport.
+Its Screen consumes Solar observations through `SensorRepository` and does not depend on the source that provides them.
 
 ---
 
@@ -235,9 +157,7 @@ The Solar domain is therefore independent of transport.
 
 **Status: Complete**
 
-The source architecture is organised by mechanism rather than vendor or product.
-
-The intended structure is:
+Sources are organised by mechanism rather than vendor or product.
 
 ```text
 src/data/sources/
@@ -253,36 +173,17 @@ modbus/
 websocket/
 ```
 
-The architectural categories answer:
-
-> **How does the framework obtain data?**
-
-They do not answer:
-
-> **Which vendor or device supplied it?**
-
-For example:
-
-```text
-API
- ├── Envoy
- ├── AlphaESS
- └── another provider
-```
-
-The provider-specific knowledge belongs inside the API implementation and its mappings.
-
-This prevents the source tree from becoming a catalogue of products.
+An API implementation may target Envoy today and AlphaESS tomorrow without making either product the architecture's source category.
 
 ---
 
 # Phase 3 — Make Data Sources Domain-Agnostic
 
-**Status: Complete / current architecture**
+**Status: Complete**
 
 A source mechanism may provide observations belonging to several domains.
 
-For MQTT:
+For example:
 
 ```text
                      MqttDataSource
@@ -296,30 +197,7 @@ For MQTT:
                     SensorRepository
 ```
 
-`MqttDataSource` does not know about Screens.
-
-`TopicMappings` binds external MQTT topics to domain-owned observation identities.
-
-The same principle applies to API sources:
-
-```text
-External API
-      │
-      ▼
-ApiDataSource
-      │
-      ▼
-ApiMappings
-      │
-      ▼
-Domain observations
-```
-
-A source implementation provides observations.
-
-A domain defines what those observations mean.
-
-Those responsibilities remain separate.
+`MqttDataSource` does not know which Screen consumes the data.
 
 ---
 
@@ -327,30 +205,21 @@ Those responsibilities remain separate.
 
 **Status: Architectural decision locked; implementation next**
 
-This phase replaces direct integer identity with the semantic-key contract.
+The framework introduces `ObservationKey` as the stable domain-facing identity of an observation.
 
-The framework will introduce:
-
-```text
-ObservationKey
-```
-
-as the stable domain-facing identity.
-
-The key must be:
+The key is:
 
 - meaningful
 - stable
+- human-readable
 - source-independent
-- screen-independent
-- independent of repository storage order
+- Screen-independent
+- independent of storage order
 - independent of runtime allocation
 
-The key is not a storage index.
+Where an existing external identity already expresses the meaning well, such as a Home Assistant entity ID, the framework may use it directly.
 
-The developer defines meaning.
-
-The runtime defines storage.
+The key is not a repository index.
 
 ---
 
@@ -358,43 +227,11 @@ The runtime defines storage.
 
 **Status: Planned**
 
-The repository will resolve an `ObservationKey` into an opaque runtime:
+`ObservationHandle` becomes the compact runtime reference used after registration/resolution.
 
-```text
-ObservationHandle
-```
+The runtime allocates it.
 
-Conceptually:
-
-```text
-ObservationKey
-      │
-      ▼
-register / resolve
-      │
-      ▼
-ObservationHandle
-```
-
-The handle is an implementation detail.
-
-No domain contract should require values such as:
-
-```text
-17
-42
-0x5C8E2B13
-```
-
-merely to identify an observation.
-
-A developer should be able to declare:
-
-```text
-solar.power.production
-```
-
-without knowing where the framework will store it.
+No domain contract contains a manually invented storage number.
 
 ---
 
@@ -402,23 +239,21 @@ without knowing where the framework will store it.
 
 **Status: Planned**
 
-The repository must stop treating domain identity as a direct array index.
+`SensorRepository` will keep storage private.
 
-The target model is:
+The desired relationship is:
 
 ```text
-SensorRepository
-    │
-    ├── ObservationHandle → record
-    │
-    └── record → SensorTile / observation state
+ObservationHandle
+      │
+      ▼
+repository record
+      │
+      ▼
+storage slot
 ```
 
-The repository may continue to use compact fixed-capacity storage internally.
-
-The important change is that storage position is no longer exposed as domain identity.
-
-Efficient embedded storage therefore remains possible without making the storage layout part of the architecture.
+The storage representation remains an implementation concern.
 
 ---
 
@@ -426,35 +261,21 @@ Efficient embedded storage therefore remains possible without making the storage
 
 **Status: Planned**
 
-A semantic observation may have more than one possible source.
-
-For example:
+An observation may have several candidate source mechanisms:
 
 ```text
 room.temperature
     │
-    ├── local BME280
+    ├── local BME280 / I²C
     ├── MQTT / Home Assistant
-    └── Modbus controller
+    └── Modbus
 ```
 
-The `ObservationKey` remains stable.
+The key remains stable.
 
-Source selection becomes a runtime policy.
+Source selection may use availability, priority, freshness, health, or other policy.
 
-Possible factors include:
-
-- source availability
-- source priority
-- observation freshness
-- source health
-- explicit configuration
-
-Round-robin selection may be appropriate when several sources are equivalent, but it is a **resolution policy**, not an identity mechanism.
-
-The key rule is:
-
-> **Multiple sources may resolve to the same semantic observation.**
+Round-robin may be one possible policy where several sources are equivalent, but it is not an identity mechanism.
 
 ---
 
@@ -462,9 +283,7 @@ The key rule is:
 
 **Status: Architectural requirement**
 
-A Screen may consume observations from several independent source mechanisms simultaneously.
-
-For example:
+A Screen may consume observations from several independent mechanisms:
 
 ```text
                      DataSourceManager
@@ -473,44 +292,82 @@ For example:
           ▼                 ▼                 ▼
         MQTT              I²C               API
           │                 │                 │
-     observations      observations      observations
-          │                 │                 │
           └─────────────────┼─────────────────┘
                             ▼
                     SensorRepository
                             │
                             ▼
-                     Smart Wall Panel
+                      Active Screen
 ```
 
-A Smart Wall Panel might display:
-
-```text
-Date / Time
-Weather forecast
-Room temperature
-Room humidity
-Air pressure
-Solar production
-Light state
-HVAC state
-```
-
-while obtaining those observations from different source mechanisms.
-
-The Screen should not need to know which source supplied each value.
-
-This is a core framework property.
+A Smart Wall Panel may combine local sensors, MQTT devices, API information, and future Modbus observations without making the Screen source-aware.
 
 ---
 
-# Phase 9 — Future Command Identity
+# Phase 9 — Platform Profiles and Composition
+
+**Status: Architectural decision locked; implementation underway**
+
+Telemetry remains one framework.
+
+PlatformIO environments instantiate target-specific capability compositions.
+
+```text
+                         TELEMETRY
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+       Shared Framework              PlatformIO Composition
+              │                             │
+              │                    ┌────────┴────────┐
+              │                    ▼                 ▼
+              │              ESP8266 env        ESP32/CYD env
+              │                    │                 │
+              │                    ├── MQTT          ├── MQTT
+              │                    ├── Local I/O     ├── API/TLS
+              │                    ├── Touch         ├── Local I/O
+              │                    └── constrained   ├── Touch
+              │                        observation   ├── Control
+              │                        UI            └── richer UI
+              │
+              └──── shared contracts and domain model ────
+```
+
+### Platform Profile Principle
+
+> **A platform profile is a composition of Telemetry capabilities selected for a target's resources and purpose. Platform profiles do not redefine Telemetry's architectural contracts.**
+
+The reference profiles are:
+
+### ESP8266 Reference Profile
+
+> **Observation-oriented, resource-constrained composition.**
+
+The ESP8266 remains a deliberate constrained reference platform. It validates memory discipline, allocation discipline, compact runtime design, and lightweight observation architecture.
+
+MQTT and appropriate local I/O capabilities are its primary data mechanisms.
+
+### ESP32/CYD Reference Profile
+
+> **Observation-and-control-oriented, resource-expanded composition.**
+
+The ESP32/CYD provides the resource envelope for richer observation, API/TLS integration, multi-source composition, system integration, and control-oriented applications.
+
+Capabilities unsuitable or unnecessary for the ESP8266 are not implemented as workarounds. They are omitted from that composition.
+
+The governing rule is:
+
+> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
+
+PlatformIO provides this composition boundary through build environments rather than a second platform-specific framework architecture.
+
+---
+
+# Phase 10 — Future Command Identity
 
 **Status: Future architectural pressure**
 
-An interactive panel may also publish commands.
-
-Examples:
+Interactive target applications may eventually publish commands such as:
 
 ```text
 livingroom.lamp.set
@@ -518,104 +375,23 @@ hvac.target_temperature.set
 blind.position.set
 ```
 
-This is deliberately **not** being folded into the observation contract.
+Command identity is deliberately not mixed into the observation contract in this sprint.
 
-The current sprint establishes observation identity and source independence first.
-
-A future sprint may introduce a corresponding command/action identity model if the pressure warrants it.
-
-The rule remains:
-
-> **Do not turn the observation architecture into a command bus before the requirement exists.**
+A future sprint may introduce an analogous command identity model if the requirement warrants it.
 
 ---
 
-# Phase 10 — Availability and Retained MQTT Data
+# Phase 11 — Availability and Retained MQTT Data
 
-**Status: Existing source behaviour / documented architecture**
+**Status: Existing architecture / documentation**
 
-MQTT is push-based.
-
-A newly connected device may otherwise wait for the next publication.
-
-Retained messages allow the broker to deliver the last known value immediately to a new subscriber.
-
-This avoids introducing device-side caching merely to compensate for source timing.
+MQTT retained messages allow a newly connected subscriber to receive the last published value immediately.
 
 The preferred architecture remains:
 
 > **The source should provide current observations as early as reasonably possible.**
 
 ---
-
-# Platform Constraints
-
-The ESP8266 has a constrained runtime heap.
-
-TLS-backed HTTPS can consume substantial memory and compete with display and MQTT requirements.
-
-This remains a platform constraint, not a domain identity constraint.
-
-Therefore:
-
-```text
-ESP8266
-    └── MQTT composition may be appropriate
-
-ESP32-class hardware
-    └── API/TLS composition may be appropriate
-```
-
-The domain model remains identical.
-
-Only source composition changes.
-
----
-
-# Platform Composition
-
-**Status: Architectural decision locked**
-
-Telemetry is a framework, not an ESP8266 architecture. PlatformIO environments are
-the build-time composition mechanism. The shared source tree defines contracts and
-reusable capabilities. A PlatformIO environment selects the target platform, board,
-resource envelope, libraries and capabilities instantiated for that build.
-
-```text
-                         TELEMETRY
-                             │
-             ┌───────────────┴───────────────┐
-             │                               │
-       Shared Framework                 PlatformIO Composition
-             │                               │
-             │                    ┌──────────┴──────────┐
-             │                    ▼                     ▼
-             │              ESP8266 env           ESP32/CYD env
-             │                    │                     │
-             │                    ├── MQTT              ├── MQTT
-             │                    ├── Local I/O         ├── API/TLS
-             │                    ├── Touch             ├── Local I/O
-             │                    └── constrained UI    ├── Touch
-             │                                          ├── Control
-             │                                          └── richer UI
-             │
-             └──── identical contracts and domain model ─────
-```
-
-The project deliberately does not create separate framework architectures under
-`src/platform/esp8266` and `src/platform/esp32`.
-
-The governing principle is:
-
-> **Telemetry defines the architecture. Composition determines which capabilities a target can instantiate.**
-
-The ESP8266 remains a constrained reference profile. An ESP32/CYD profile may
-instantiate capabilities that are impractical on the ESP8266, including API/TLS,
-richer UI, control and broader multi-source composition.
-
-PlatformIO expresses this through build environments and build flags. Capability
-selection should remain at the composition root rather than spreading platform
-conditionals throughout the framework.
 
 # Definition of Done
 
@@ -624,66 +400,68 @@ Sprint Zeta is complete when:
 - [x] Solar exists as an independent domain.
 - [x] Source mechanisms are organised independently of products.
 - [x] MQTT can provide observations for multiple domains.
-- [x] The course correction from integer identity to semantic `ObservationKey` is documented and frozen.
-- [ ] `ObservationKey` replaces domain-facing integer identity.
+- [x] Semantic `ObservationKey` identity is defined and frozen.
+- [ ] `ObservationKey` is implemented as the stable domain-facing identity.
 - [ ] `ObservationHandle` is introduced as an opaque runtime reference.
 - [ ] Repository storage slots become implementation details.
-- [ ] Domain identity is independent of storage ordering.
+- [ ] Source resolution is independent of observation identity.
 - [ ] Multiple sources can resolve to the same observation key.
-- [ ] Source selection policy is defined without becoming part of observation identity.
 - [ ] A single Screen can consume observations from multiple independent sources.
-- [ ] The observation model remains reusable for future interactive/source-publishing applications.
+- [x] PlatformIO is established as the target composition mechanism.
+- [x] ESP8266 is defined as the constrained observation reference profile.
+- [x] ESP32/CYD is defined as the expanded observation-and-control reference profile.
+- [ ] Platform-specific capability composition is fully wired into application construction.
 - [ ] Command identity, if required, is designed separately rather than mixed into the observation contract.
 
 ---
 
-# The Architectural Result
+# Architectural Result
 
-The data architecture should ultimately read as:
+The data architecture now has two independent axes.
 
-```text
-                    Semantic Knowledge
-                           │
-                           ▼
-                   ObservationKey
-                           │
-                           ▼
-                    Source resolution
-                           │
-                           ▼
-                  ObservationHandle
-                           │
-                           ▼
-                 Repository storage
-                           ▲
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-             MQTT         I²C          API
-              │            │            │
-              └────────────┴────────────┘
-```
-
-Screens consume observations by identity:
+### Identity axis
 
 ```text
+Meaning
+  ↓
 ObservationKey
-      │
-      ▼
+  ↓
 ObservationHandle
-      │
-      ▼
-Screen
+  ↓
+Storage
 ```
 
-not:
+### Composition axis
 
 ```text
-Sensor number 17
-      │
-      ▼
-array slot 17
+Architecture
+    ↓
+Capabilities
+    ↓
+PlatformIO Composition
+    ↓
+Target platform
 ```
+
+Together:
+
+```text
+                         TELEMETRY
+                             │
+                 ┌───────────┴───────────┐
+                 │                       │
+             Identity                Composition
+                 │                       │
+           ObservationKey          PlatformIO env
+                 │                       │
+        ObservationHandle          ESP8266 / ESP32
+                 │                       │
+              Storage                Capabilities
+```
+
+The framework remains one architecture.
+
+The target determines which parts of that architecture are instantiated.
 
 ---
 
@@ -691,15 +469,15 @@ array slot 17
 
 The original problem appeared to be:
 
-> "How do we stop Weather sensors and Solar sensors from occupying accidental ranges in one array?"
+> "How do we stop Weather and Solar from occupying accidental ranges in one array?"
 
 The deeper problem was:
 
 > **We had allowed storage identity to become domain identity.**
 
-The solution is not merely to choose better numbers.
+The solution is not to choose better numbers.
 
-The solution is to remove storage identity from the domain model entirely.
+The solution is to separate meaning from storage:
 
 ```text
 Meaning
@@ -713,4 +491,16 @@ ObservationHandle
 Storage
 ```
 
-This is the course correction that makes the data architecture suitable for Telemetry as a framework rather than a single weather application.
+And the platform question is separate:
+
+```text
+Architecture
+  ↓
+Capabilities
+  ↓
+Composition
+  ↓
+Target platform
+```
+
+This is what allows Telemetry to remain one framework while being deliberately different in composition on constrained observation devices and richer observation-and-control devices.

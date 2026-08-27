@@ -10,6 +10,8 @@ These are not simply lists of completed features. Each sprint represents a stage
 - [Sprint Beta — Establish the Application Boundaries](Sprint_Beta.md)
 - [Sprint Gamma — Establish the Control Panel](Sprint_Gamma.md)
 - [Sprint Delta — Interaction Architecture](Sprint_Delta.md)
+- [Sprint Epsilon — Screen Navigation](Sprint_Epsilon.md)
+- [Sprint Zeta — Domain Data and Source Architecture](Sprint_Zeta.md)
 
 ## The Roadmap as a Breadcrumb Trail
 
@@ -22,36 +24,13 @@ Control Panel
     ↓
 Interaction architecture
     ↓
-Navigation
+Screen navigation
+    ↓
+Domain data + source architecture
 ```
 
 The roadmap is a record of architectural discovery.
 
-Sprint Delta established the interaction architecture. The next implementation task is to return to the deferred:
+Each sprint starts with pressure created by the previous design.
 
-> Weather → Control Panel navigation
-
-The architecture comes first.
-
-The implementation follows.
-
-
-## Current Architectural Pressure
-
-The Solar and data-source work has exposed a further refinement that will be recorded as a new sprint after the architecture is frozen:
-
-```text
-ObservationKey
-      │
-      ▼
-ObservationHandle
-      │
-      ▼
-Repository storage
-```
-
-The principle is:
-
-> **Identity is semantic; runtime storage is implementation detail.**
-
-The same observation may also be resolved from multiple source mechanisms.
+The implementation follows the architecture.
