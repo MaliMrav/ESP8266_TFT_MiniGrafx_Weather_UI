@@ -165,6 +165,54 @@ The process is always the same.
 - Revise your model.
 - Repeat.
 
+## Design for observability
+
+The original Telemetry hardware was built without a dedicated USB or serial connection.
+
+At the time, that seemed like a reasonable engineering decision. The device was intended to be a small, network-connected display, and there was no expectation that serial diagnostics would become an important part of development.
+
+During development, that assumption became a constraint.
+
+When the touch system needed to be diagnosed, there was no convenient serial console available.
+
+Rather than redesign the hardware, we made the display itself an observability surface.
+
+A diagnostic overlay was introduced so that the system could expose the information needed to investigate touch behaviour, including:
+
+- the interpreted `InputAction`
+- screen coordinates
+- raw touch coordinates
+
+The constraint turned out to be useful.
+
+It forced us to make the system observable through an interface the hardware already possessed.
+
+The resulting diagnostic capability became part of the development architecture rather than a collection of temporary debug prints.
+
+The later ESP32/CYD platform provides USB and therefore makes conventional serial diagnostics much easier. That does not make the original hardware decision a mistake. It gives us two useful engineering perspectives:
+
+```text
+ESP8266
+    │
+    └── constrained observability
+            → instrument what the system already exposes
+
+ESP32/CYD
+    │
+    └── expanded observability
+            → conventional development interfaces available
+```
+
+The two platforms therefore teach different lessons.
+
+The ESP8266 is a deliberately constrained reference platform. Its limitations encourage disciplined resource use and force us to think carefully about what the system needs to expose.
+
+The ESP32/CYD provides a richer development and runtime environment in which more conventional instrumentation and integration techniques become practical.
+
+> **Design for observability. When observability was not designed in, engineer another way to observe the system.**
+
+The engineering story behind this decision is recorded in [Designing for Observability](docs/architecture/007-designing-for-observability.md).
+
 ## Firmware should be observable
 
 Invisible systems are difficult to understand.
@@ -174,6 +222,7 @@ Telemetry embraces logging, diagnostics, status screens and clear runtime behavi
 ## Architecture is User Experience
 
 Not just for end users.
+
 - For developers.
 - For contributors.
 - For future-you.
@@ -183,22 +232,23 @@ Readable code is a feature.
 # Repository Structure
 
 The project intentionally separates concerns.
+
 ```text
-Application  
-    │  
-    ▼  
-ScreenManager  
-    │  
-    ▼  
-Input Actions  
-    │  
-    ▼  
-InputManager  
-    │  
-    ▼  
-Hardware Profiles  
-    │  
-    ▼  
+Application
+    │
+    ▼
+ScreenManager
+    │
+    ▼
+Input Actions
+    │
+    ▼
+InputManager
+    │
+    ▼
+Hardware Profiles
+    │
+    ▼
 Physical Hardware
 ```
 
