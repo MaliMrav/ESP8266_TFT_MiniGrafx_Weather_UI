@@ -1,5 +1,15 @@
-; Copy to platformio.local.ini
+; Copy this file to:
+;
+;     platformio.local.ini
+;
+; platformio.local.ini is intentionally local and should not be committed.
+;
+; Use it for machine-specific settings such as OTA credentials, serial
+; ports, local development overrides, or other settings that should not
+; form part of the shared Telemetry configuration.
+;
 
 [env:ESP8266]
+
 upload_flags =
-    --auth=your-ota-password
+--auth=your-ota-password
