@@ -45,7 +45,6 @@ static void onMessage(
 
     String payloadStr;
     payloadStr.reserve(length + 1);
-
     for (unsigned int i = 0; i < length; ++i)
     {
         payloadStr += static_cast<char>(payload[i]);
