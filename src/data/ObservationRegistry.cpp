@@ -2,9 +2,7 @@
 
 namespace
 {
-    ObservationKey keys[ObservationRegistry::MAX_OBSERVATIONS] = {
-        ObservationKey{""}
-    };
+    std::string_view keys[ObservationRegistry::MAX_OBSERVATIONS];
 
     uint8_t count = 0;
 }
@@ -14,13 +12,19 @@ namespace ObservationRegistry
     void initialise()
     {
         count = 0;
+
+        for (auto& key : keys)
+        {
+            key = std::string_view{};
+        }
     }
 
-    ObservationHandle registerObservation(const ObservationKey& key)
+    ObservationHandle registerObservation(
+        const ObservationKey& key)
     {
         for (uint8_t i = 0; i < count; ++i)
         {
-            if (keys[i] == key)
+            if (keys[i] == key.view())
             {
                 return makeObservationHandle(i);
             }
@@ -31,7 +35,8 @@ namespace ObservationRegistry
             return ObservationHandle{};
         }
 
-        keys[count] = key;
+        keys[count] = key.view();
+
         return makeObservationHandle(count++);
     }
 
@@ -39,7 +44,7 @@ namespace ObservationRegistry
     {
         for (uint8_t i = 0; i < count; ++i)
         {
-            if (keys[i] == key)
+            if (keys[i] == key.view())
             {
                 return makeObservationHandle(i);
             }

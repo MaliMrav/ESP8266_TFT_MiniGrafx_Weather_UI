@@ -2,6 +2,15 @@
 
 #include <Arduino.h>
 
+class ObservationHandle;
+
+// Internal construction point used by the observation registry.
+//
+// Application and domain code must not construct handles from numeric values.
+// The numeric representation remains an implementation detail.
+constexpr ObservationHandle makeObservationHandle(uint8_t value);
+
+
 // ObservationHandle is an opaque runtime reference to a registered
 // observation.
 //
@@ -16,14 +25,7 @@
 //     - the repository storage representation
 //     - the storage index
 //
-// The numeric representation is an implementation detail of the runtime.
-// Domain code must never construct an ObservationHandle from a number.
-//
-// Handles are created by the observation registration/resolution layer and
-// subsequently passed to runtime consumers such as SensorRepository.
-//
-// Current implementation:
-//     - one byte is sufficient for the current fixed-capacity repository
+// Domain code must not construct an ObservationHandle from a number.
 //
 // The representation may change without changing the semantic contract.
 //
@@ -36,7 +38,7 @@
 //     ObservationHandle
 //           │
 //           ▼
-//     repository record
+//     repository storage
 //
 
 class ObservationHandle
@@ -72,16 +74,13 @@ private:
 
     uint8_t value_;
 
-    // Runtime registration/resolution is the only legitimate creator of
-    // handles. The repository itself does not define semantic identity.
-    friend ObservationHandle makeObservationHandle(uint8_t value);
+    // Only the runtime registry/factory may create a valid handle.
+    friend constexpr ObservationHandle makeObservationHandle(
+        uint8_t value);
 };
 
 
 // Internal construction point for the runtime observation registry.
-//
-// This function exists only as the bridge between runtime allocation and the
-// opaque handle type. Application and domain code must not call it directly.
 constexpr ObservationHandle makeObservationHandle(uint8_t value)
 {
     return ObservationHandle(value);
