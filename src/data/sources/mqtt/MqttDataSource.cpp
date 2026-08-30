@@ -57,7 +57,7 @@ static bool reconnect()
         return false;
     }
 
-    Serial.println("[MQTT] Connected");
+    // Serial.println("[MQTT] Connected");
 
     for (uint8_t i = 0; i < TOPIC_COUNT; ++i)
     {
