@@ -36,7 +36,7 @@ void BootScreen::update()
     display_.drawString(
         120,
         50,
-        "Vlad's Weather UI");
+        "Vlad's Telemetry UI");
 
     display_.setColor(
         DisplayManager::YELLOW);

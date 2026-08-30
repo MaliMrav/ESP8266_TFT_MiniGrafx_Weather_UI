@@ -21,7 +21,7 @@
 // to make each device unique (e.g. "weather-display-1a2b3c").
 // Used for WiFiManager AP name, mDNS, and ArduinoOTA discovery.
 #ifndef CFG_HOSTNAME_PREFIX
-  #define CFG_HOSTNAME_PREFIX "weather-display-"
+  #define CFG_HOSTNAME_PREFIX "telemetry-"
 #endif
 
 
