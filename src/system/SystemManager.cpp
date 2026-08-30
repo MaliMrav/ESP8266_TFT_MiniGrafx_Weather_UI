@@ -152,12 +152,12 @@ namespace
                         TouchManager::Profile::Generic);
             }
 
-            if (s_calibrationMode && s_calibrationScreen && s_screenManager)
+            if (s_calibrationMode && s_calibrationScreen && s_screenManager) // Enter calibration mode if no calibration exists or forced via config or if the user has requested it via the ControlPanelScreen
             {
                 Serial.println("[CALIBRATION] Entering calibration mode");
-                s_screenManager->activate(s_calibrationScreen);
+                s_screenManager->activate(s_calibrationScreen); // CalibrationScreen will handle the transition to WeatherScreen when calibration is complete
             }
-            else if (s_weatherScreen && s_screenManager)
+            else if (s_weatherScreen && s_screenManager) // If calibration is not required, go straight to the WeatherScreen
             {
                 s_screenManager->activate(s_weatherScreen);
             }
