@@ -2,28 +2,48 @@
 #include "WeatherSensorIds.h"
 #include "SolarSensorIds.h"
 
-// The tile array is indexed by domain-declared sensor ID constants.
-// Slots not assigned to a domain are left zero-initialised.
-// Each domain owns its own ID vocabulary; the repository remains a flat store.
-static SensorTile sensorTiles[MAX_SENSORS] = {
+namespace
+{
+    // Existing fixed storage remains the repository's private implementation.
+    static SensorTile sensorTiles[MAX_SENSORS] = {
 
-    // Weather domain
-    [SENSOR_KITCHEN_TEMP] = { "Kitchen Temp",  "\u00b0C", TEMP     },
-    [SENSOR_PERGOLA_TEMP] = { "Pergola Temp",  "\u00b0C", TEMP     },
-    [SENSOR_KITCHEN_HUM]  = { "Kitchen Hum",   "%",       HUMIDITY },
-    [SENSOR_PERGOLA_HUM]  = { "Pergola Hum",   "%",       HUMIDITY },
-    [SENSOR_PRESSURE]     = { "Pressure",      "hPa",     PRESSURE },
+        // Weather domain
+        [SENSOR_KITCHEN_TEMP] = { "Kitchen Temp",  "\u00b0C", TEMP     },
+        [SENSOR_PERGOLA_TEMP] = { "Pergola Temp",  "\u00b0C", TEMP     },
+        [SENSOR_KITCHEN_HUM]  = { "Kitchen Hum",   "%",       HUMIDITY },
+        [SENSOR_PERGOLA_HUM]  = { "Pergola Hum",   "%",       HUMIDITY },
+        [SENSOR_PRESSURE]     = { "Pressure",      "hPa",     PRESSURE },
 
-    // Solar domain
-    [SENSOR_SOLAR_POWER_NOW]          = { "Production",      "W",  ENERGY_W  },
-    [SENSOR_CONSUMPTION_POWER_NOW]    = { "Consumption",     "W",  ENERGY_W  },
-    [SENSOR_EXPORT_POWER_NOW]         = { "Export",          "W",  ENERGY_W  },
-    [SENSOR_BATTERY_POWER_NOW]        = { "Battery",         "W",  ENERGY_W  },
-    [SENSOR_SOLAR_ENERGY_TODAY]       = { "Prod Today",      "Wh", ENERGY_WH },
-    [SENSOR_CONSUMPTION_ENERGY_TODAY] = { "Cons Today",      "Wh", ENERGY_WH },
-    [SENSOR_EXPORT_ENERGY_TODAY]      = { "Export Today",   "Wh", ENERGY_WH },
-    [SENSOR_BATTERY_ENERGY_TODAY]     = { "Battery Today",  "Wh", ENERGY_WH },
-};
+        // Solar domain
+        [SENSOR_SOLAR_POWER_NOW]          = { "Production",     "W",  ENERGY_W  },
+        [SENSOR_CONSUMPTION_POWER_NOW]    = { "Consumption",    "W",  ENERGY_W  },
+        [SENSOR_EXPORT_POWER_NOW]         = { "Export",         "W",  ENERGY_W  },
+        [SENSOR_BATTERY_POWER_NOW]        = { "Battery",        "W",  ENERGY_W  },
+        [SENSOR_SOLAR_ENERGY_TODAY]       = { "Prod Today",     "Wh", ENERGY_WH },
+        [SENSOR_CONSUMPTION_ENERGY_TODAY] = { "Cons Today",     "Wh", ENERGY_WH },
+        [SENSOR_EXPORT_ENERGY_TODAY]      = { "Export Today",   "Wh", ENERGY_WH },
+        [SENSOR_BATTERY_ENERGY_TODAY]     = { "Battery Today",  "Wh", ENERGY_WH },
+    };
+
+    // Runtime observation handles are the repository's only association to
+    // semantic observations. Storage order remains private and independent
+    // of semantic identity.
+    static ObservationHandle observationHandles[MAX_SENSORS];
+    static uint8_t observationCount = 0;
+
+    SensorTile* findTile(ObservationHandle handle)
+    {
+        for (uint8_t i = 0; i < observationCount; ++i)
+        {
+            if (observationHandles[i] == handle)
+            {
+                return &sensorTiles[i];
+            }
+        }
+
+        return nullptr;
+    }
+}
 
 static_assert(SENSOR_PRESSURE < MAX_SENSORS,
               "Weather sensor IDs exceed MAX_SENSORS capacity");
@@ -47,15 +67,122 @@ static_assert(SENSOR_BATTERY_ENERGY_TODAY < MAX_SENSORS,
 
 void SensorRepository::initialise()
 {
-    for (auto& tile : sensorTiles)
+    observationCount = 0;
+
+    for (uint8_t i = 0; i < MAX_SENSORS; ++i)
     {
-        tile.value  = NAN;
-        tile.minVal = NAN;
-        tile.maxVal = NAN;
-        tile.trend  = TREND_NONE;
-        tile.valid  = false;
+        observationHandles[i] = ObservationHandle{};
+
+        sensorTiles[i].value  = NAN;
+        sensorTiles[i].minVal = NAN;
+        sensorTiles[i].maxVal = NAN;
+        sensorTiles[i].trend  = TREND_NONE;
+        sensorTiles[i].valid  = false;
     }
 }
+
+bool SensorRepository::registerObservation(
+    ObservationHandle handle,
+    const SensorTile& tile)
+{
+    if (!handle.isValid())
+    {
+        return false;
+    }
+
+    // Registration is idempotent at the repository boundary as well.
+    // Existing storage is retained for an already-bound handle.
+    if (findTile(handle))
+    {
+        return true;
+    }
+
+    if (observationCount >= MAX_SENSORS)
+    {
+        return false;
+    }
+
+    sensorTiles[observationCount] = tile;
+    observationHandles[observationCount] = handle;
+    ++observationCount;
+
+    return true;
+}
+
+SensorTile* SensorRepository::getTile(ObservationHandle handle)
+{
+    return findTile(handle);
+}
+
+bool SensorRepository::setValue(
+    ObservationHandle handle,
+    float value)
+{
+    if (isnan(value))
+    {
+        return false;
+    }
+
+    SensorTile* tile = findTile(handle);
+
+    if (!tile)
+    {
+        return false;
+    }
+
+    tile->value = value;
+    tile->valid = true;
+    return true;
+}
+
+bool SensorRepository::setMin(
+    ObservationHandle handle,
+    float value)
+{
+    SensorTile* tile = findTile(handle);
+
+    if (!tile || isnan(value))
+    {
+        return false;
+    }
+
+    tile->minVal = value;
+    return true;
+}
+
+bool SensorRepository::setMax(
+    ObservationHandle handle,
+    float value)
+{
+    SensorTile* tile = findTile(handle);
+
+    if (!tile || isnan(value))
+    {
+        return false;
+    }
+
+    tile->maxVal = value;
+    return true;
+}
+
+bool SensorRepository::setTrend(
+    ObservationHandle handle,
+    TrendDirection trend)
+{
+    SensorTile* tile = findTile(handle);
+
+    if (!tile)
+    {
+        return false;
+    }
+
+    tile->trend = trend;
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// Legacy ID-based API retained during the Zeta migration.
+// -----------------------------------------------------------------------------
 
 SensorTile& SensorRepository::getTile(uint8_t id)
 {
