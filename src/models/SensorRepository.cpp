@@ -29,7 +29,16 @@ namespace
     // semantic observations. Storage order remains private and independent
     // of semantic identity.
     static ObservationHandle observationHandles[MAX_SENSORS];
-    static uint8_t observationCount = 0;
+    // During the Zeta migration, the existing Weather/Solar ID-backed tiles
+    // occupy the first thirteen storage slots.
+    //
+    // Handle-backed observations are allocated after those legacy slots until
+    // the remaining domains have migrated to ObservationHandle.
+    //
+    // This is migration scaffolding only. It is not part of the final identity
+    // model.
+    static constexpr uint8_t LEGACY_SENSOR_STORAGE_COUNT = 13;
+    static uint8_t observationCount = LEGACY_SENSOR_STORAGE_COUNT;
 
     SensorTile* findTile(ObservationHandle handle)
     {
@@ -67,7 +76,7 @@ static_assert(SENSOR_BATTERY_ENERGY_TODAY < MAX_SENSORS,
 
 void SensorRepository::initialise()
 {
-    observationCount = 0;
+    observationCount = LEGACY_SENSOR_STORAGE_COUNT;
 
     for (uint8_t i = 0; i < MAX_SENSORS; ++i)
     {
