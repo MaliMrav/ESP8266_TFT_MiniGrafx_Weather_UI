@@ -1,35 +1,62 @@
 #pragma once
 
-// SensorRepository is the single source of truth for all sensor data.
+// SensorRepository is the runtime store for observation data.
 //
-// Responsibilities:
-//   - own the fixed-capacity array of SensorTiles
-//   - expose a typed write API so data sources update values by sensor ID
-//   - expose a read API for screens to retrieve individual tiles by ID
+// The repository owns storage.
+// It does not own semantic observation identity.
 //
-// Sensor IDs are declared per-domain (WeatherSensorIds.h, SolarSensorIds.h,
-// etc.) as constexpr uint8_t constants. The repository has no knowledge of
-// domains — it is a flat indexed store. Domains are responsible for
-// assigning non-overlapping IDs within MAX_SENSORS.
+// Domain code identifies observations with ObservationKey and obtains an
+// ObservationHandle through ObservationRegistry. The repository then binds
+// that handle to one of its private storage slots.
 //
-// The write API (setValue, setMin, setMax, setTrend) is the only legitimate
-// way for data sources to mutate tile state. Direct array access from
-// outside this module is intentionally not supported.
+//     ObservationKey
+//           │
+//           ▼
+//     ObservationRegistry
+//           │
+//           ▼
+//     ObservationHandle
+//           │
+//           ▼
+//     SensorRepository
+//           │
+//           ▼
+//     private storage slot
+//
+// Legacy uint8_t ID APIs remain temporarily during the Zeta migration.
+// They will be removed once existing domains have migrated to handles.
 
 #include <Arduino.h>
 #include "SensorTile.h"
 #include "SensorCapacity.h"
+#include "../data/ObservationHandle.h"
 
 namespace SensorRepository
 {
-    void        initialise();
+    void initialise();
 
-    // Returns a single tile by its domain-declared sensor ID.
+    // Bind a runtime observation handle to repository storage.
+    //
+    // Returns false if the handle is invalid or no storage slot is available.
+    bool registerObservation(
+        ObservationHandle handle,
+        const SensorTile& tile);
+
+    // Retrieve a registered observation by its opaque runtime handle.
+    //
+    // Returns nullptr when the handle has not been registered.
+    SensorTile* getTile(ObservationHandle handle);
+
+    // Typed write API using the opaque runtime handle.
+    bool setValue(ObservationHandle handle, float value);
+    bool setMin  (ObservationHandle handle, float value);
+    bool setMax  (ObservationHandle handle, float value);
+    bool setTrend(ObservationHandle handle, TrendDirection trend);
+
+    // -------------------------------------------------------------------------
+    // Legacy ID-based API retained during the Zeta migration.
+    // -------------------------------------------------------------------------
     SensorTile& getTile(uint8_t id);
-
-    // Typed write API — the only way data sources should write to the repository.
-    // Domain sensor ID constants are the stable identity; data sources never
-    // touch tile indices directly.
     void setValue(uint8_t id, float value);
     void setMin  (uint8_t id, float value);
     void setMax  (uint8_t id, float value);
