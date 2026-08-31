@@ -25,6 +25,7 @@
 #include "data/ObservationHandle.h"
 #include "data/ObservationRegistry.h"
 #include "models/SensorRepository.h"
+#include "models/SolarObservationKeys.h"
 
 //=============================================================================
 // Global objects
@@ -132,7 +133,27 @@ void setup()
     #if defined(TELEMETRY_OBSERVATION_PIPELINE_TEST)
         ObservationRegistry::initialise();
         SensorRepository::initialise();
-    
+        ObservationHandle solarCurrentProductionHandle;
+        ObservationHandle solarTodayProductionHandle;
+        ObservationHandle solarCurrentConsumptionHandle;
+        ObservationHandle solarTodayConsumptionHandle;
+
+        solarCurrentProductionHandle =
+            ObservationRegistry::registerObservation(
+                SolarObservations::CURRENT_POWER_PRODUCTION);
+
+        solarTodayProductionHandle =
+            ObservationRegistry::registerObservation(
+                SolarObservations::ENERGY_PRODUCTION_TODAY);
+
+        solarCurrentConsumptionHandle =
+            ObservationRegistry::registerObservation(
+                SolarObservations::CURRENT_POWER_CONSUMPTION);
+
+        solarTodayConsumptionHandle =
+            ObservationRegistry::registerObservation(
+                SolarObservations::ENERGY_CONSUMPTION_TODAY);
+
         testObservationPipeline();
     #endif
 
