@@ -19,7 +19,7 @@
 #include "../display/DisplayManager.h"
 #include "../ui/Screen.h"
 #include "../input/InputEvent.h"
-#include "../models/SolarSensorIds.h"
+#include "../models/SolarObservationKeys.h"
 
 class SolarScreen : public Screen
 {
