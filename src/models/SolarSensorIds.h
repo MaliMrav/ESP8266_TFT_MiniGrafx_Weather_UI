@@ -1,27 +1,36 @@
 #pragma once
 
-#include <Arduino.h>
+#include "../data/ObservationKey.h"
 
-// SolarSensorIds declares the sensor IDs owned by the solar/energy domain.
+// SolarObservationKeys defines the semantic observation identities owned by
+// the solar / energy domain.
 //
-// These IDs are stable integer indices into SensorRepository.
-// They are defined here, close to the screens and data sources that use them,
-// rather than in a global enum that every domain must include.
+// The names deliberately match the Home Assistant entity IDs already in use.
+// This does not create a dependency on Home Assistant.
 //
-// The repository remains a flat runtime store. Domain identity is provided by
-// these explicit IDs rather than by ranges or positional assumptions.
+// The same semantic observation may later be supplied by:
+//     - MQTT
+//     - API
+//     - another gateway
+//     - a local sensor
 //
-// To add a solar sensor: add its ID here, add its tile in
-// SensorRepository.cpp, and add its topic binding in TopicMappings.cpp.
+// The transport is independent of the observation identity.
 
-constexpr uint8_t SENSOR_SOLAR_POWER_NOW       = 5;
-constexpr uint8_t SENSOR_CONSUMPTION_POWER_NOW = 6;
-constexpr uint8_t SENSOR_EXPORT_POWER_NOW      = 7;
-constexpr uint8_t SENSOR_BATTERY_POWER_NOW     = 8;
+namespace SolarObservations
+{
+    constexpr ObservationKey CURRENT_POWER_PRODUCTION{
+        "sensor.envoy_current_power_production"
+    };
 
-constexpr uint8_t SENSOR_SOLAR_ENERGY_TODAY       = 9;
-constexpr uint8_t SENSOR_CONSUMPTION_ENERGY_TODAY = 10;
-constexpr uint8_t SENSOR_EXPORT_ENERGY_TODAY      = 11;
-constexpr uint8_t SENSOR_BATTERY_ENERGY_TODAY     = 12;
+    constexpr ObservationKey ENERGY_PRODUCTION_TODAY{
+        "sensor.envoy_energy_production_today"
+    };
 
-constexpr uint8_t SOLAR_SENSOR_COUNT = 8;
+    constexpr ObservationKey CURRENT_POWER_CONSUMPTION{
+        "sensor.envoy_current_power_consumption"
+    };
+
+    constexpr ObservationKey ENERGY_CONSUMPTION_TODAY{
+        "sensor.envoy_energy_consumption_today"
+    };
+}
