@@ -9,22 +9,32 @@
 #include "../input/InputAction.h"
 #include "../input/InputEvent.h"
 #include "../input/InputManager.h"
+
 #include "../data/IDataSource.h"
+#include "../data/ObservationRegistry.h"
+#include "../data/ObservationHandle.h"
+
 #include "../models/SensorRepository.h"
+#include "../models/SensorTile.h"
+#include "../models/SolarObservationKeys.h"
+
 #include "../ota/OtaManager.h"
+
 #include "../screens/BootScreen.h"
 #include "../screens/CalibrationScreen.h"
 #include "../screens/WeatherScreen.h"
 #include "../screens/SolarScreen.h"
 #include "../screens/control/ControlPanelScreen.h"
+
 #include "../system/StatusCallback.h"
+
 #include "../touch/TouchController.h"
 #include "../touch/TouchManager.h"
+
 #include "../ui/ScreenManager.h"
+
 #include "../wifi/WifiSetup.h"
-#include "../data/ObservationRegistry.h"
-#include "../data/ObservationKey.h"
-#include "../models/SolarObservationKeys.h"
+
 
 namespace
 {
@@ -32,17 +42,21 @@ namespace
     TouchController* s_touchController = nullptr;
     TouchManager* s_touchManager = nullptr;
     ScreenManager* s_screenManager = nullptr;
+
     BootScreen* s_bootScreen = nullptr;
     WeatherScreen* s_weatherScreen = nullptr;
     SolarScreen* s_solarScreen = nullptr;
     CalibrationScreen* s_calibrationScreen = nullptr;
     ControlPanelScreen* s_controlPanelScreen = nullptr;
+
     OtaManager* s_ota = nullptr;
     IDataSource* s_dataSource = nullptr;
 
     bool s_calibrationMode = false;
+
     uint32_t s_calibrationCompleteSince = 0;
     uint32_t s_lastRedraw = 0;
+
 
     void bootStatus(
         const String& message,
@@ -55,7 +69,9 @@ namespace
 
         if (s_bootScreen)
         {
-            s_bootScreen->setStatus(message, progress);
+            s_bootScreen->setStatus(
+                message,
+                progress);
         }
 
         if (s_screenManager)
@@ -63,6 +79,7 @@ namespace
             s_screenManager->update();
         }
     }
+
 
     void initialiseFilesystem()
     {
@@ -81,6 +98,7 @@ namespace
             return;
         }
     }
+
 
     void initialiseNetwork(
         const String& hostname)
@@ -102,13 +120,9 @@ namespace
             TimeConfig::NTP_SERVER);
     }
 
-    void initialiseServices(
-        const String& hostname)
-    {
-        bootStatus(
-            "Loading sensors",
-            BootProgress::SENSORS_INIT);
 
+    bool initialiseObservations()
+    {
         ObservationRegistry::initialise();
         SensorRepository::initialise();
 
@@ -117,48 +131,190 @@ namespace
                 SolarObservations::CURRENT_POWER_PRODUCTION);
 
         const ObservationHandle solarTodayProduction =
-           ObservationRegistry::registerObservation(
-             SolarObservations::ENERGY_PRODUCTION_TODAY);
+            ObservationRegistry::registerObservation(
+                SolarObservations::ENERGY_PRODUCTION_TODAY);
 
         const ObservationHandle solarCurrentConsumption =
-           ObservationRegistry::registerObservation(
-              SolarObservations::CURRENT_POWER_CONSUMPTION);
-            
+            ObservationRegistry::registerObservation(
+                SolarObservations::CURRENT_POWER_CONSUMPTION);
+
         const ObservationHandle solarTodayConsumption =
-          ObservationRegistry::registerObservation(
-              SolarObservations::ENERGY_CONSUMPTION_TODAY);
+            ObservationRegistry::registerObservation(
+                SolarObservations::ENERGY_CONSUMPTION_TODAY);
 
-        SensorRepository::registerObservation(
-            production,
-            SensorTile{
-                "Production",
-                "W",
-                ENERGY_W
-            });
-        
-        SensorRepository::registerObservation(
-            productionToday,
-            SensorTile{
-                "Prod Today",
-                "Wh",
-                ENERGY_WH
-            });
 
-        SensorRepository::registerObservation(
-            consumption,
-            SensorTile{
-                "Consumption",
-                "W",
-                ENERGY_W
-            });
-        
-        SensorRepository::registerObservation(
-            consumptionToday,
-            SensorTile{
-                "Cons Today",
-                "Wh",
-                ENERGY_WH
-            });
+        if (!solarCurrentProduction.isValid() ||
+            !solarTodayProduction.isValid() ||
+            !solarCurrentConsumption.isValid() ||
+            !solarTodayConsumption.isValid())
+        {
+            Serial.println(
+                "[OBSERVATION] Registration failed: registry capacity exceeded");
+
+            return false;
+        }
+
+
+        const bool productionRegistered =
+            SensorRepository::registerObservation(
+                solarCurrentProduction,
+                SensorTile{
+                    "Production",
+                    "W",
+                    ENERGY_W
+                });
+
+        const bool productionTodayRegistered =
+            SensorRepository::registerObservation(
+                solarTodayProduction,
+                SensorTile{
+                    "Prod Today",
+                    "Wh",
+                    ENERGY_WH
+                });
+
+        const bool consumptionRegistered =
+            SensorRepository::registerObservation(
+                solarCurrentConsumption,
+                SensorTile{
+                    "Consumption",
+                    "W",
+                    ENERGY_W
+                });
+
+        const bool consumptionTodayRegistered =
+            SensorRepository::registerObservation(
+                solarTodayConsumption,
+                SensorTile{
+                    "Cons Today",
+                    "Wh",
+                    ENERGY_WH
+                });
+
+
+        if (!productionRegistered ||
+            !productionTodayRegistered ||
+            !consumptionRegistered ||
+            !consumptionTodayRegistered)
+        {
+            Serial.println(
+                "[OBSERVATION] Registration failed: repository capacity exceeded");
+
+            return false;
+        }
+
+        return true;
+    }
+
+
+#if defined(TELEMETRY_OBSERVATION_PIPELINE_TEST)
+
+    void testObservationPipeline()
+    {
+        Serial.println(
+            "[ZETA] Observation pipeline test");
+
+        constexpr ObservationKey key{
+            "sensor.bar_switch_panel_energy_power"
+        };
+
+
+        const ObservationHandle handle =
+            ObservationRegistry::registerObservation(key);
+
+        if (!handle.isValid())
+        {
+            Serial.println(
+                "[ZETA] FAIL: ObservationHandle allocation");
+
+            return;
+        }
+
+
+        const bool registered =
+            SensorRepository::registerObservation(
+                handle,
+                SensorTile{
+                    "Pipeline Test",
+                    "W",
+                    ENERGY_W
+                });
+
+        if (!registered)
+        {
+            Serial.println(
+                "[ZETA] FAIL: SensorRepository registration");
+
+            return;
+        }
+
+
+        constexpr float TEST_VALUE = 42.0f;
+
+        if (!SensorRepository::setValue(
+                handle,
+                TEST_VALUE))
+        {
+            Serial.println(
+                "[ZETA] FAIL: SensorRepository value update");
+
+            return;
+        }
+
+
+        SensorTile* stored =
+            SensorRepository::getTile(handle);
+
+        if (!stored ||
+            !stored->valid ||
+            stored->value != TEST_VALUE)
+        {
+            Serial.println(
+                "[ZETA] FAIL: SensorRepository readback");
+
+            return;
+        }
+
+
+        const ObservationHandle resolved =
+            ObservationRegistry::resolve(key);
+
+        if (resolved != handle)
+        {
+            Serial.println(
+                "[ZETA] FAIL: ObservationKey resolution");
+
+            return;
+        }
+
+
+        Serial.println(
+            "[ZETA] PASS");
+    }
+
+#endif
+
+
+    void initialiseServices(
+        const String& hostname)
+    {
+        bootStatus(
+            "Loading sensors",
+            BootProgress::SENSORS_INIT);
+
+        if (!initialiseObservations())
+        {
+            Serial.println(
+                "[OBSERVATION] Application composition failed");
+
+            delay(3000);
+            ESP.restart();
+            return;
+        }
+
+#if defined(TELEMETRY_OBSERVATION_PIPELINE_TEST)
+        testObservationPipeline();
+#endif
 
 
         bootStatus(
@@ -167,8 +323,10 @@ namespace
 
         if (s_ota)
         {
-            s_ota->begin(hostname.c_str());
+            s_ota->begin(
+                hostname.c_str());
         }
+
 
         bootStatus(
             "Starting data sources",
@@ -180,52 +338,66 @@ namespace
         }
     }
 
+
     void initialiseUI()
     {
-        // Only handle calibration if touch hardware exists
-        if (HardwareConfig::HAS_TOUCH && HardwareConfig::HAS_RESISTIVE_TOUCH)
+        // Only handle calibration if touch hardware exists.
+        if (HardwareConfig::HAS_TOUCH &&
+            HardwareConfig::HAS_RESISTIVE_TOUCH)
         {
-            // Check if calibration data exists
             const bool calibrationLoaded =
                 s_touchController &&
                 s_touchController->loadCalibration();
 
-            // Enter calibration mode if:
-            // - Forced via config, OR
-            // - No valid calibration exists
+            // Enter calibration mode when:
+            // - forced via configuration, or
+            // - no valid calibration data exists.
             s_calibrationMode =
                 CalibrationConfig::FORCE_CALIBRATION ||
                 !calibrationLoaded;
 
+
             if (s_touchManager)
             {
                 s_touchManager->setProfile(
-                    s_calibrationMode ?
-                        TouchManager::Profile::Calibration :
-                        TouchManager::Profile::Generic);
+                    s_calibrationMode
+                        ? TouchManager::Profile::Calibration
+                        : TouchManager::Profile::Generic);
             }
 
-            if (s_calibrationMode && s_calibrationScreen && s_screenManager) // Enter calibration mode if no calibration exists or forced via config or if the user has requested it via the ControlPanelScreen
+
+            if (s_calibrationMode &&
+                s_calibrationScreen &&
+                s_screenManager)
             {
-                Serial.println("[CALIBRATION] Entering calibration mode");
-                s_screenManager->activate(s_calibrationScreen); // CalibrationScreen will handle the transition to WeatherScreen when calibration is complete
+                Serial.println(
+                    "[CALIBRATION] Entering calibration mode");
+
+                s_screenManager->activate(
+                    s_calibrationScreen);
             }
-            else if (s_weatherScreen && s_screenManager) // If calibration is not required, go straight to the WeatherScreen
+            else if (s_weatherScreen &&
+                     s_screenManager)
             {
-                s_screenManager->activate(s_weatherScreen);
+                s_screenManager->activate(
+                    s_weatherScreen);
             }
         }
         else
         {
-            // No touch hardware or capacitive touch (no calibration needed)
             s_calibrationMode = false;
 
-            if (s_weatherScreen && s_screenManager)
+            if (s_weatherScreen &&
+                s_screenManager)
             {
-                Serial.println("[SYSTEM] Touch disabled or not requiring calibration - showing WeatherScreen");
-                s_screenManager->activate(s_weatherScreen);
+                Serial.println(
+                    "[SYSTEM] Touch disabled or not requiring calibration - showing WeatherScreen");
+
+                s_screenManager->activate(
+                    s_weatherScreen);
             }
         }
+
 
         if (s_screenManager)
         {
@@ -233,6 +405,7 @@ namespace
         }
     }
 }
+
 
 namespace SystemManager
 {
@@ -242,25 +415,37 @@ namespace SystemManager
                String(ESP.getChipId(), HEX);
     }
 
+
     bool mountFileSystem()
     {
         if (LittleFS.begin())
         {
-            Serial.println("LittleFS mounted");
+            Serial.println(
+                "LittleFS mounted");
+
             return true;
         }
 
-        Serial.println("LittleFS mount failed");
-        Serial.println("Formatting LittleFS...");
+
+        Serial.println(
+            "LittleFS mount failed");
+
+        Serial.println(
+            "Formatting LittleFS...");
+
 
         if (!LittleFS.format())
         {
-            Serial.println("LittleFS format failed");
+            Serial.println(
+                "LittleFS format failed");
+
             return false;
         }
 
+
         return LittleFS.begin();
     }
+
 
     void begin(
         DisplayManager&     display,
@@ -279,36 +464,55 @@ namespace SystemManager
         s_touchController = &touchController;
         s_touchManager = &touchManager;
         s_screenManager = &screenManager;
+
         s_bootScreen = &bootScreen;
         s_weatherScreen = &weatherScreen;
         s_solarScreen = &solarScreen;
         s_calibrationScreen = &calibrationScreen;
         s_controlPanelScreen = &controlPanelScreen;
-        s_ota        = &ota;
+
+        s_ota = &ota;
         s_dataSource = &dataSource;
 
-        s_screenManager->bindTouchManager(s_touchManager);
 
-        s_screenManager->registerScreen(s_weatherScreen);
-        s_screenManager->registerScreen(s_solarScreen);
-        s_screenManager->registerScreen(s_calibrationScreen);
-        s_screenManager->registerScreen(s_controlPanelScreen);
+        s_screenManager->bindTouchManager(
+            s_touchManager);
+
+
+        s_screenManager->registerScreen(
+            s_weatherScreen);
+
+        s_screenManager->registerScreen(
+            s_solarScreen);
+
+        s_screenManager->registerScreen(
+            s_calibrationScreen);
+
+        s_screenManager->registerScreen(
+            s_controlPanelScreen);
+
 
         if (s_display)
         {
             s_display->begin();
         }
 
-        if (s_screenManager && s_bootScreen)
+
+        if (s_screenManager &&
+            s_bootScreen)
         {
-            s_screenManager->activate(s_bootScreen);
+            s_screenManager->activate(
+                s_bootScreen);
         }
+
 
         bootStatus(
             "Starting display",
             BootProgress::DISPLAY_INIT);
 
-        if (HardwareConfig::HAS_TOUCH && s_touchController)
+
+        if (HardwareConfig::HAS_TOUCH &&
+            s_touchController)
         {
             s_touchController->begin();
 
@@ -318,7 +522,8 @@ namespace SystemManager
 
             if (s_touchManager)
             {
-                InputManager::registerSource(s_touchManager);
+                InputManager::registerSource(
+                    s_touchManager);
             }
         }
         else
@@ -328,21 +533,32 @@ namespace SystemManager
                 BootProgress::TOUCH_INIT);
         }
 
+
         initialiseFilesystem();
 
-        const String hostname = getHostname();
 
-        initialiseNetwork(hostname);
-        initialiseServices(hostname);
+        const String hostname =
+            getHostname();
+
+
+        initialiseNetwork(
+            hostname);
+
+        initialiseServices(
+            hostname);
+
 
         bootStatus(
             "Ready",
             BootProgress::READY);
 
+
         initialiseUI();
+
 
         s_lastRedraw = millis();
     }
+
 
     void update()
     {
@@ -351,25 +567,31 @@ namespace SystemManager
             s_ota->loop();
         }
 
+
         if (s_dataSource)
         {
             s_dataSource->loop();
         }
 
+
         InputManager::update();
+
 
         const bool inputHandled =
             s_screenManager &&
-            InputManager::dispatchTo(*s_screenManager);
+            InputManager::dispatchTo(
+                *s_screenManager);
 
-        if (inputHandled && s_screenManager)
+
+        if (inputHandled &&
+            s_screenManager)
         {
             s_screenManager->update();
             s_lastRedraw = millis();
         }
 
-        // Handle calibration completion transition
-        // Only relevant if we're in calibration mode (resistive touch only)
+
+        // Handle calibration completion transition.
         if (HardwareConfig::HAS_TOUCH &&
             HardwareConfig::HAS_RESISTIVE_TOUCH &&
             s_calibrationMode &&
@@ -379,23 +601,36 @@ namespace SystemManager
         {
             if (s_calibrationCompleteSince == 0)
             {
-                s_calibrationCompleteSince = millis();
+                s_calibrationCompleteSince =
+                    millis();
             }
-            else if (millis() - s_calibrationCompleteSince > 2000)
+            else if (
+                millis() -
+                s_calibrationCompleteSince > 2000)
             {
-                Serial.println("[CALIBRATION] Complete - transitioning to WeatherScreen");
+                Serial.println(
+                    "[CALIBRATION] Complete - transitioning to WeatherScreen");
+
                 s_calibrationMode = false;
+
 
                 if (s_touchManager)
                 {
-                    s_touchManager->setProfile(TouchManager::Profile::Generic);
+                    s_touchManager->setProfile(
+                        TouchManager::Profile::Generic);
                 }
 
-                if (s_screenManager && s_weatherScreen)
+
+                if (s_screenManager &&
+                    s_weatherScreen)
                 {
-                    s_screenManager->activate(s_weatherScreen);
+                    s_screenManager->activate(
+                        s_weatherScreen);
+
                     s_screenManager->update();
-                    s_lastRedraw = millis();
+
+                    s_lastRedraw =
+                        millis();
                 }
             }
         }
@@ -404,8 +639,11 @@ namespace SystemManager
             s_calibrationCompleteSince = 0;
         }
 
-        // Periodic screen refresh
-        if (s_screenManager && millis() - s_lastRedraw >= 1000)
+
+        // Periodic screen refresh.
+        if (s_screenManager &&
+            millis() -
+            s_lastRedraw >= 1000)
         {
             s_screenManager->update();
             s_lastRedraw = millis();
