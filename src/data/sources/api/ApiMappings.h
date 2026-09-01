@@ -1,16 +1,19 @@
 #pragma once
 
+#include <Arduino.h>
+
 // ApiMappings isolates provider-specific API resources and field locations
 // from the generic API source mechanism.
 //
-// The current mapping describes the local solar API currently configured
-// for this firmware. A different API provider can replace this mapping
-// without changing SensorRepository, Screens, or IDataSource.
+// This file describes the structure of the configured API only.
+// Semantic observation identity belongs to the domain-owned
+// SolarObservationKeys.h.
 //
-// Domain identity remains in the domain-owned SensorIds headers.
-
-#include <Arduino.h>
-#include "../../../models/SolarSensorIds.h"
+// A different API provider can replace this mapping without changing:
+//     - SensorRepository
+//     - Screens
+//     - IDataSource
+//
 
 namespace ApiMappings
 {

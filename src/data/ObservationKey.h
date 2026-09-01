@@ -1,39 +1,76 @@
 #pragma once
 
-#include "../data/ObservationKey.h"
+#include <string_view>
 
-// SolarObservationKeys declares the semantic identities owned by the
-// solar / energy domain.
+// ObservationKey identifies an observation by its semantic identity.
 //
-// The key names intentionally match the Home Assistant entity identities
-// already in use. These strings identify observations; they do not identify
-// a transport or storage location.
+// The key answers:
 //
-// Transport remains independent:
-//     MQTT
-//     API
-//     local sensor
-//     future source
+//     "What observation are we talking about?"
 //
-// Runtime storage is independent:
+// It does not identify:
+//
+//     - a data source
+//     - a physical device
+//     - a repository storage slot
+//     - a runtime handle
+//
+// ObservationKey does not own its text.
+//
+// Domain keys are expected to reference stable text, normally string literals:
+//
+//     constexpr ObservationKey key{
+//         "sensor.envoy_current_power_production"
+//     };
+//
+// Runtime resolution is deliberately outside this type:
+//
+//     ObservationKey
+//           │
+//           ▼
+//     ObservationRegistry
+//           │
+//           ▼
 //     ObservationHandle
+//           │
+//           ▼
 //     SensorRepository
+//
 
-namespace SolarObservations
+struct ObservationKey
 {
-    constexpr ObservationKey CURRENT_POWER_PRODUCTION{
-        "sensor.envoy_current_power_production"
-    };
+    std::string_view value;
 
-    constexpr ObservationKey ENERGY_PRODUCTION_TODAY{
-        "sensor.envoy_energy_production_today"
-    };
+    constexpr explicit ObservationKey(
+        std::string_view value)
+        : value(value)
+    {
+    }
 
-    constexpr ObservationKey CURRENT_POWER_CONSUMPTION{
-        "sensor.envoy_current_power_consumption"
-    };
+    constexpr std::string_view view() const
+    {
+        return value;
+    }
 
-    constexpr ObservationKey ENERGY_CONSUMPTION_TODAY{
-        "sensor.envoy_energy_consumption_today"
-    };
-}
+    constexpr const char* c_str() const
+    {
+        return value.data();
+    }
+
+    constexpr std::size_t size() const
+    {
+        return value.size();
+    }
+
+    constexpr bool operator==(
+        const ObservationKey& other) const
+    {
+        return value == other.value;
+    }
+
+    constexpr bool operator!=(
+        const ObservationKey& other) const
+    {
+        return !(*this == other);
+    }
+};

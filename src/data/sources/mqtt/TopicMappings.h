@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 #include "../../../models/WeatherSensorIds.h"
-#include "../../../models/SolarSensorIds.h"
+#include "../../../models/SolarObservationKeys.h"
 #include "Topics.h"
 
 // TopicMapping binds an MQTT topic string to a domain-owned sensor ID and

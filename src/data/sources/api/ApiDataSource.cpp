@@ -7,6 +7,7 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include "../../../models/SensorRepository.h"
+// #include "../../../models/SolarObservationKeys.h"
 
 static String authHeader()
 {
