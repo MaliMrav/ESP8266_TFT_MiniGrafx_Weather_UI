@@ -22,6 +22,9 @@
 #include "../touch/TouchManager.h"
 #include "../ui/ScreenManager.h"
 #include "../wifi/WifiSetup.h"
+#include "../data/ObservationRegistry.h"
+#include "../data/ObservationKey.h"
+#include "../models/SolarObservationKeys.h"
 
 namespace
 {

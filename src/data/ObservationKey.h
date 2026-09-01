@@ -1,91 +1,39 @@
 #pragma once
 
-#include <string_view>
+#include "../data/ObservationKey.h"
 
-// ObservationKey identifies an observation by its semantic identity.
+// SolarObservationKeys declares the semantic identities owned by the
+// solar / energy domain.
 //
-// The key answers:
+// The key names intentionally match the Home Assistant entity identities
+// already in use. These strings identify observations; they do not identify
+// a transport or storage location.
 //
-//     "What observation are we talking about?"
-//
-// It does not identify:
-//
-//     - a data source
-//     - a physical device
-//     - a repository storage slot
-//     - a runtime handle
-//
-// An ObservationKey does not own its text.
-//
-// The referenced text must therefore have a lifetime at least as long
-// as the ObservationKey is used. Domain keys are expected to be declared
-// from static string literals:
-//
-//     constexpr ObservationKey key{
-//         "sensor.bar_switch_panel_energy_power"
-//     };
-//
-// Existing external identities, such as Home Assistant entity IDs,
-// may be used directly where they already provide a meaningful,
-// stable semantic identity.
-//
-// The same ObservationKey may be resolved through different source
-// mechanisms:
-//
+// Transport remains independent:
 //     MQTT
 //     API
-//     I2C
-//     One-Wire
-//     Modbus
+//     local sensor
+//     future source
 //
-// Runtime resolution is deliberately outside this contract:
-//
-//     ObservationKey
-//           │
-//           ▼
-//     source resolution
-//           │
-//           ▼
+// Runtime storage is independent:
 //     ObservationHandle
-//           │
-//           ▼
-//     repository storage
-//
+//     SensorRepository
 
-struct ObservationKey
+namespace SolarObservations
 {
-    std::string_view value;
+    constexpr ObservationKey CURRENT_POWER_PRODUCTION{
+        "sensor.envoy_current_power_production"
+    };
 
-    constexpr explicit ObservationKey(
-        std::string_view value)
-        : value(value)
-    {
-    }
+    constexpr ObservationKey ENERGY_PRODUCTION_TODAY{
+        "sensor.envoy_energy_production_today"
+    };
 
-    constexpr std::string_view view() const
-    {
-        return value;
-    }
+    constexpr ObservationKey CURRENT_POWER_CONSUMPTION{
+        "sensor.envoy_current_power_consumption"
+    };
 
-    constexpr const char* c_str() const
-    {
-        return value.data();
-    }
-
-    constexpr std::size_t size() const
-    {
-        return value.size();
-    }
-
-    constexpr bool operator==(
-        const ObservationKey& other) const
-    {
-        return value == other.value;
-    }
-
-    constexpr bool operator!=(
-        const ObservationKey& other) const
-    {
-        return !(*this == other);
-    }
-};
+    constexpr ObservationKey ENERGY_CONSUMPTION_TODAY{
+        "sensor.envoy_energy_consumption_today"
+    };
+}
