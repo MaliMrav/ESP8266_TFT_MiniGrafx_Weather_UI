@@ -1,52 +1,201 @@
 #include "TopicMappings.h"
 
 const TopicMapping topicMappings[] = {
+
     // ---------------------------------------------------------------------
     // Weather — Kitchen
     // ---------------------------------------------------------------------
-    { Topics::Kitchen::Temp::value,     SENSOR_KITCHEN_TEMP,  TopicMapping::VALUE },
-    { Topics::Kitchen::Temp::min,       SENSOR_KITCHEN_TEMP,  TopicMapping::MIN   },
-    { Topics::Kitchen::Temp::max,       SENSOR_KITCHEN_TEMP,  TopicMapping::MAX   },
-    { Topics::Kitchen::Temp::trend,     SENSOR_KITCHEN_TEMP,  TopicMapping::TREND },
 
-    { Topics::Kitchen::Hum::value,      SENSOR_KITCHEN_HUM,   TopicMapping::VALUE },
-    { Topics::Kitchen::Hum::min,        SENSOR_KITCHEN_HUM,   TopicMapping::MIN   },
-    { Topics::Kitchen::Hum::max,        SENSOR_KITCHEN_HUM,   TopicMapping::MAX   },
-    { Topics::Kitchen::Hum::trend,      SENSOR_KITCHEN_HUM,   TopicMapping::TREND },
+    {
+        Topics::Kitchen::Temp::value,
+        WeatherObservations::KITCHEN_TEMPERATURE,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Kitchen::Temp::min,
+        WeatherObservations::KITCHEN_TEMPERATURE,
+        TopicMapping::MIN
+    },
+
+    {
+        Topics::Kitchen::Temp::max,
+        WeatherObservations::KITCHEN_TEMPERATURE,
+        TopicMapping::MAX
+    },
+
+    {
+        Topics::Kitchen::Temp::trend,
+        WeatherObservations::KITCHEN_TEMPERATURE,
+        TopicMapping::TREND
+    },
+
+
+    {
+        Topics::Kitchen::Hum::value,
+        WeatherObservations::KITCHEN_HUMIDITY,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Kitchen::Hum::min,
+        WeatherObservations::KITCHEN_HUMIDITY,
+        TopicMapping::MIN
+    },
+
+    {
+        Topics::Kitchen::Hum::max,
+        WeatherObservations::KITCHEN_HUMIDITY,
+        TopicMapping::MAX
+    },
+
+    {
+        Topics::Kitchen::Hum::trend,
+        WeatherObservations::KITCHEN_HUMIDITY,
+        TopicMapping::TREND
+    },
+
+
+    {
+        Topics::Kitchen::Pressure::value,
+        WeatherObservations::PRESSURE,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Kitchen::Pressure::min,
+        WeatherObservations::PRESSURE,
+        TopicMapping::MIN
+    },
+
+    {
+        Topics::Kitchen::Pressure::max,
+        WeatherObservations::PRESSURE,
+        TopicMapping::MAX
+    },
+
+    {
+        Topics::Kitchen::Pressure::trend,
+        WeatherObservations::PRESSURE,
+        TopicMapping::TREND
+    },
+
 
     // ---------------------------------------------------------------------
     // Weather — Pergola
     // ---------------------------------------------------------------------
-    { Topics::Pergola::Temp::value,     SENSOR_PERGOLA_TEMP,  TopicMapping::VALUE },
-    { Topics::Pergola::Temp::min,       SENSOR_PERGOLA_TEMP,  TopicMapping::MIN   },
-    { Topics::Pergola::Temp::max,       SENSOR_PERGOLA_TEMP,  TopicMapping::MAX   },
-    { Topics::Pergola::Temp::trend,     SENSOR_PERGOLA_TEMP,  TopicMapping::TREND },
 
-    { Topics::Pergola::Hum::value,      SENSOR_PERGOLA_HUM,   TopicMapping::VALUE },
-    { Topics::Pergola::Hum::min,        SENSOR_PERGOLA_HUM,   TopicMapping::MIN   },
-    { Topics::Pergola::Hum::max,        SENSOR_PERGOLA_HUM,   TopicMapping::MAX   },
-    { Topics::Pergola::Hum::trend,      SENSOR_PERGOLA_HUM,   TopicMapping::TREND },
+    {
+        Topics::Pergola::Temp::value,
+        WeatherObservations::PERGOLA_TEMPERATURE,
+        TopicMapping::VALUE
+    },
 
-    { Topics::Pergola::Pressure::value, SENSOR_PRESSURE,      TopicMapping::VALUE },
-    { Topics::Pergola::Pressure::min,   SENSOR_PRESSURE,      TopicMapping::MIN   },
-    { Topics::Pergola::Pressure::max,   SENSOR_PRESSURE,      TopicMapping::MAX   },
-    { Topics::Pergola::Pressure::trend, SENSOR_PRESSURE,      TopicMapping::TREND },
+    {
+        Topics::Pergola::Temp::min,
+        WeatherObservations::PERGOLA_TEMPERATURE,
+        TopicMapping::MIN
+    },
+
+    {
+        Topics::Pergola::Temp::max,
+        WeatherObservations::PERGOLA_TEMPERATURE,
+        TopicMapping::MAX
+    },
+
+    {
+        Topics::Pergola::Temp::trend,
+        WeatherObservations::PERGOLA_TEMPERATURE,
+        TopicMapping::TREND
+    },
+
+
+    {
+        Topics::Pergola::Hum::value,
+        WeatherObservations::PERGOLA_HUMIDITY,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Pergola::Hum::min,
+        WeatherObservations::PERGOLA_HUMIDITY,
+        TopicMapping::MIN
+    },
+
+    {
+        Topics::Pergola::Hum::max,
+        WeatherObservations::PERGOLA_HUMIDITY,
+        TopicMapping::MAX
+    },
+
+    {
+        Topics::Pergola::Hum::trend,
+        WeatherObservations::PERGOLA_HUMIDITY,
+        TopicMapping::TREND
+    },
+
+
+    {
+        Topics::Pergola::Pressure::value,
+        WeatherObservations::PRESSURE,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Pergola::Pressure::min,
+        WeatherObservations::PRESSURE,
+        TopicMapping::MIN
+    },
+
+    {
+        Topics::Pergola::Pressure::max,
+        WeatherObservations::PRESSURE,
+        TopicMapping::MAX
+    },
+
+    {
+        Topics::Pergola::Pressure::trend,
+        WeatherObservations::PRESSURE,
+        TopicMapping::TREND
+    },
+
 
     // ---------------------------------------------------------------------
     // Solar — current power
+    //
+    // Export and battery remain placeholders. No semantic observations
+    // have been declared for them yet because their future source is
+    // expected to be AlphaESS rather than Envoy.
     // ---------------------------------------------------------------------
-    { Topics::Solar::Power::production,  SENSOR_SOLAR_POWER_NOW,       TopicMapping::VALUE },
-    { Topics::Solar::Power::consumption, SENSOR_CONSUMPTION_POWER_NOW, TopicMapping::VALUE },
-    { Topics::Solar::Power::export_,     SENSOR_EXPORT_POWER_NOW,      TopicMapping::VALUE },
-    { Topics::Solar::Power::battery,     SENSOR_BATTERY_POWER_NOW,     TopicMapping::VALUE },
+
+    {
+        Topics::Solar::Power::production,
+        SolarObservations::CURRENT_POWER_PRODUCTION,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Solar::Power::consumption,
+        SolarObservations::CURRENT_POWER_CONSUMPTION,
+        TopicMapping::VALUE
+    },
+
 
     // ---------------------------------------------------------------------
     // Solar — today's accumulated energy
     // ---------------------------------------------------------------------
-    { Topics::Solar::Today::production,  SENSOR_SOLAR_ENERGY_TODAY,       TopicMapping::VALUE },
-    { Topics::Solar::Today::consumption, SENSOR_CONSUMPTION_ENERGY_TODAY, TopicMapping::VALUE },
-    { Topics::Solar::Today::export_,     SENSOR_EXPORT_ENERGY_TODAY,      TopicMapping::VALUE },
-    { Topics::Solar::Today::battery,     SENSOR_BATTERY_ENERGY_TODAY,     TopicMapping::VALUE },
+
+    {
+        Topics::Solar::Today::production,
+        SolarObservations::ENERGY_PRODUCTION_TODAY,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Solar::Today::consumption,
+        SolarObservations::ENERGY_CONSUMPTION_TODAY,
+        TopicMapping::VALUE
+    }
 };
 
 const uint8_t TOPIC_COUNT =
