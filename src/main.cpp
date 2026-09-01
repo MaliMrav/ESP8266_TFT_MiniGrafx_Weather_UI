@@ -134,54 +134,6 @@ void setup()
         ObservationRegistry::initialise();
         SensorRepository::initialise();
         
-        const ObservationHandle production =
-            ObservationRegistry::registerObservation(
-                SolarObservations::CURRENT_POWER_PRODUCTION);
-        
-        const ObservationHandle productionToday =
-            ObservationRegistry::registerObservation(
-                SolarObservations::ENERGY_PRODUCTION_TODAY);
-        
-        const ObservationHandle consumption =
-            ObservationRegistry::registerObservation(
-                SolarObservations::CURRENT_POWER_CONSUMPTION);
-        
-        const ObservationHandle consumptionToday =
-            ObservationRegistry::registerObservation(
-                SolarObservations::ENERGY_CONSUMPTION_TODAY);
-        
-        SensorRepository::registerObservation(
-            production,
-            SensorTile{
-                "Production",
-                "W",
-                ENERGY_W
-            });
-        
-        SensorRepository::registerObservation(
-            productionToday,
-            SensorTile{
-                "Prod Today",
-                "Wh",
-                ENERGY_WH
-            });
-
-        SensorRepository::registerObservation(
-            consumption,
-            SensorTile{
-                "Consumption",
-                "W",
-                ENERGY_W
-            });
-        
-        SensorRepository::registerObservation(
-            consumptionToday,
-            SensorTile{
-                "Cons Today",
-                "Wh",
-                ENERGY_WH
-            });
-
         testObservationPipeline();
     #endif
 

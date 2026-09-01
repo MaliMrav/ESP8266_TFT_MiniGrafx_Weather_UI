@@ -109,7 +109,57 @@ namespace
             "Loading sensors",
             BootProgress::SENSORS_INIT);
 
+        ObservationRegistry::initialise();
         SensorRepository::initialise();
+
+        const ObservationHandle solarCurrentProduction =
+            ObservationRegistry::registerObservation(
+                SolarObservations::CURRENT_POWER_PRODUCTION);
+
+        const ObservationHandle solarTodayProduction =
+           ObservationRegistry::registerObservation(
+             SolarObservations::ENERGY_PRODUCTION_TODAY);
+
+        const ObservationHandle solarCurrentConsumption =
+           ObservationRegistry::registerObservation(
+              SolarObservations::CURRENT_POWER_CONSUMPTION);
+            
+        const ObservationHandle solarTodayConsumption =
+          ObservationRegistry::registerObservation(
+              SolarObservations::ENERGY_CONSUMPTION_TODAY);
+
+        SensorRepository::registerObservation(
+            production,
+            SensorTile{
+                "Production",
+                "W",
+                ENERGY_W
+            });
+        
+        SensorRepository::registerObservation(
+            productionToday,
+            SensorTile{
+                "Prod Today",
+                "Wh",
+                ENERGY_WH
+            });
+
+        SensorRepository::registerObservation(
+            consumption,
+            SensorTile{
+                "Consumption",
+                "W",
+                ENERGY_W
+            });
+        
+        SensorRepository::registerObservation(
+            consumptionToday,
+            SensorTile{
+                "Cons Today",
+                "Wh",
+                ENERGY_WH
+            });
+
 
         bootStatus(
             "Starting OTA",
