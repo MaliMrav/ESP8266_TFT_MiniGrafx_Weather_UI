@@ -301,59 +301,6 @@ namespace
     return true;
 }
 
-
-        const bool productionRegistered =
-            SensorRepository::registerObservation(
-                solarCurrentProduction,
-                SensorTile{
-                    "Production",
-                    "W",
-                    ENERGY_W
-                });
-
-        const bool productionTodayRegistered =
-            SensorRepository::registerObservation(
-                solarTodayProduction,
-                SensorTile{
-                    "Prod Today",
-                    "Wh",
-                    ENERGY_WH
-                });
-
-        const bool consumptionRegistered =
-            SensorRepository::registerObservation(
-                solarCurrentConsumption,
-                SensorTile{
-                    "Consumption",
-                    "W",
-                    ENERGY_W
-                });
-
-        const bool consumptionTodayRegistered =
-            SensorRepository::registerObservation(
-                solarTodayConsumption,
-                SensorTile{
-                    "Cons Today",
-                    "Wh",
-                    ENERGY_WH
-                });
-
-
-        if (!productionRegistered ||
-            !productionTodayRegistered ||
-            !consumptionRegistered ||
-            !consumptionTodayRegistered)
-        {
-            Serial.println(
-                "[OBSERVATION] Registration failed: repository capacity exceeded");
-
-            return false;
-        }
-
-        return true;
-    }
-
-
 #if defined(TELEMETRY_OBSERVATION_PIPELINE_TEST)
 
     void testObservationPipeline()
