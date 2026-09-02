@@ -73,20 +73,28 @@ namespace Topics
   // -------------------------------------------------------
     namespace Solar
     {
-        namespace Power
+        namespace Current
         {
-            constexpr const char* production  = "ha/envoy/power/production";
-            constexpr const char* consumption = "ha/envoy/power/consumption";
-            constexpr const char* export_     = "ha/envoy/power/export";
-            constexpr const char* battery     = "ha/envoy/power/battery";
+            constexpr const char* production  = "ha/envoy/current_power_production";
+            constexpr const char* consumption = "ha/envoy/current_power_consumption";
+            constexpr const char* export_     = "ha/envoy/current_power_export";
+            constexpr const char* battery     = "ha/envoy/current_power_battery";
         }
 
         namespace Today
         {
-            constexpr const char* production  = "ha/envoy/today/production";
-            constexpr const char* consumption = "ha/envoy/today/consumption";
-            constexpr const char* export_     = "ha/envoy/today/export";
-            constexpr const char* battery     = "ha/envoy/today/battery";
+            constexpr const char* production  = "ha/envoy/energy_production_today";
+            constexpr const char* consumption = "ha/envoy/energy_consumption_today";
+            constexpr const char* export_     = "ha/envoy/energy_export_today";
+            constexpr const char* battery     = "ha/envoy/energy_battery_today";
+        }
+
+        namespace Lifetime
+        {
+            constexpr const char* production  = "ha/envoy/lifetime_energy_production";
+            constexpr const char* consumption = "ha/envoy/lifetime_energy_consumption";
+            constexpr const char* export_     = "ha/envoy/lifetime_energy_export";
+            constexpr const char* battery     = "ha/envoy/lifetime_energy_battery";
         }
     }
 }

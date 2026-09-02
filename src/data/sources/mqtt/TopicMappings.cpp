@@ -135,13 +135,13 @@ const TopicMapping topicMappings[] = {
     // -------------------------------------------------------------------------
 
     {
-        Topics::Solar::Power::production,
+        Topics::Solar::Current::production,
         SolarObservations::CURRENT_POWER_PRODUCTION,
         TopicMapping::VALUE
     },
 
     {
-        Topics::Solar::Power::consumption,
+        Topics::Solar::Current::consumption,
         SolarObservations::CURRENT_POWER_CONSUMPTION,
         TopicMapping::VALUE
     },
@@ -161,6 +161,23 @@ const TopicMapping topicMappings[] = {
         SolarObservations::ENERGY_CONSUMPTION_TODAY,
         TopicMapping::VALUE
     }
+    /*
+    // -------------------------------------------------------------------------
+    // Solar — Lifetime's accumulated energy
+    // -------------------------------------------------------------------------
+
+    {
+        Topics::Solar::Lifetime::production,
+        SolarObservations::ENERGY_PRODUCTION_LIFETIME,
+        TopicMapping::VALUE
+    },
+
+    {
+        Topics::Solar::Lifetime::consumption,
+        SolarObservations::ENERGY_CONSUMPTION_LIFETIME,
+        TopicMapping::VALUE
+    }
+    */
 };
 
 const uint8_t TOPIC_COUNT =
