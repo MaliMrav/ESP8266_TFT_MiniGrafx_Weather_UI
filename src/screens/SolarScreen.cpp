@@ -1,8 +1,9 @@
 #include "SolarScreen.h"
 
 #include "../display/DisplayManager.h"
-#include "../data/ObservationRegistry.h"
 #include "../models/SensorRepository.h"
+#include "../data/ObservationRegistry.h"
+#include "../models/SolarObservationKeys.h"
 #include "../input/InputAction.h"
 #include "../ui/ScreenIntent.h"
 #include "../ui/ScreenKind.h"
@@ -53,7 +54,9 @@ void SolarScreen::enter()
         ObservationHandle{};
 }
 
-void SolarScreen::leave() {}
+void SolarScreen::leave()
+{
+}
 
 void SolarScreen::update()
 {
@@ -92,6 +95,7 @@ void SolarScreen::drawHeader()
 
     display_.setFont(ArialMT_Plain_10);
     display_.setColor(DisplayManager::YELLOW);
+
     display_.drawString(
         MARGIN + colW / 2,
         HEADER_H - 2,
@@ -106,10 +110,14 @@ void SolarScreen::drawHeader()
 void SolarScreen::drawGrid()
 {
     const int gridTop = HEADER_H + GAP;
+
     const int colW =
         (display_.getWidth() - (2 * MARGIN) - GAP) / COLS;
+
     const int rowH =
-        (display_.getHeight() - gridTop - ((ROWS - 1) * GAP)) / ROWS;
+        (display_.getHeight() -
+         gridTop -
+         ((ROWS - 1) * GAP)) / ROWS;
 
     const ObservationHandle leftHandles[ROWS] = {
         currentProductionHandle_,
@@ -134,7 +142,8 @@ void SolarScreen::drawGrid()
 
     for (int row = 0; row < ROWS; row++)
     {
-        const int y = gridTop + row * (rowH + GAP);
+        const int y =
+            gridTop + row * (rowH + GAP);
 
         drawQuadrant(
             MARGIN,
@@ -171,7 +180,10 @@ void SolarScreen::drawQuadrant(
     display_.setFont(ArialMT_Plain_10);
     display_.setTextAlignment(DisplayManager::CENTER);
     display_.setColor(DisplayManager::BLUE);
-    display_.drawString(x + w / 2, y + 3, label);
+    display_.drawString(
+        x + w / 2,
+        y + 3,
+        label);
 
     display_.setFont(ArialRoundedMTBold_14);
     display_.setColor(DisplayManager::WHITE);
@@ -182,12 +194,18 @@ void SolarScreen::drawQuadrant(
             ? formatPower(tile->value)
             : "--";
 
-    display_.drawString(x + w / 2, y + h / 2 - 7, val);
+    display_.drawString(
+        x + w / 2,
+        y + h / 2 - 7,
+        val);
 }
 
 String SolarScreen::formatPower(float v) const
 {
-    if (isnan(v)) return "--";
+    if (isnan(v))
+    {
+        return "--";
+    }
 
     // Display kW / kWh for values at or above 1000.
     if (v >= 1000.0f)

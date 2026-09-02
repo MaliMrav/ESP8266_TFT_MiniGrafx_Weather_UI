@@ -189,27 +189,34 @@ void WeatherScreen::drawWifiQuality()
 
 void WeatherScreen::drawSensorGrid()
 {
-    const ObservationHandle handles[WEATHER_SENSOR_COUNT] = {
+    const ObservationHandle handles[] = {
         kitchenTemperatureHandle_,
         pergolaTemperatureHandle_,
         kitchenHumidityHandle_,
         pergolaHumidityHandle_,
         pressureHandle_
-};
-    uint8_t sensorCount = WEATHER_SENSOR_COUNT;
+    };
+
+    constexpr uint8_t sensorCount =
+        sizeof(handles) / sizeof(handles[0]);
 
     const int margin = ScreenConfig::SIDE_MARGIN;
     const int gap    = ScreenConfig::TILE_GAP;
     const int topY   = ScreenConfig::TOP_MARGIN;
 
     const int cols = ScreenConfig::COLUMNS;
-    const int rows  = (sensorCount + cols - 1) / cols;
+    const int rows =
+        (sensorCount + cols - 1) / cols;
 
     const int tileW =
-        (display_.getWidth() - (2 * margin) - ((cols - 1) * gap)) / cols;
+        (display_.getWidth() -
+         (2 * margin) -
+         ((cols - 1) * gap)) / cols;
 
     const int tileH =
-        (display_.getHeight() - topY - ((rows - 1) * gap)) / rows;
+        (display_.getHeight() -
+         topY -
+         ((rows - 1) * gap)) / rows;
 
     for (uint8_t i = 0; i < sensorCount; i++)
     {
@@ -221,9 +228,18 @@ void WeatherScreen::drawSensorGrid()
             (i == sensorCount - 1) &&
             (sensorCount % cols == 1);
 
-        int x = full ? margin : margin + col * (tileW + gap);
-        int w = full ? display_.getWidth() - (2 * margin) : tileW;
-        int y = topY + row * (tileH + gap);
+        int x =
+            full
+                ? margin
+                : margin + col * (tileW + gap);
+
+        int w =
+            full
+                ? display_.getWidth() - (2 * margin)
+                : tileW;
+
+        int y =
+            topY + row * (tileH + gap);
 
         SensorTile* s =
             SensorRepository::getTile(handles[i]);
@@ -232,61 +248,109 @@ void WeatherScreen::drawSensorGrid()
         {
             continue;
         }
-        
+
         display_.setColor(DisplayManager::WHITE);
-        display_.drawRect(x, y, w, tileH);
+        display_.drawRect(
+            x,
+            y,
+            w,
+            tileH);
 
         display_.setFont(ArialRoundedMTBold_14);
-        display_.setColor(getColor(s.type));
+        display_.setColor(getColor(s->type));
         display_.setTextAlignment(DisplayManager::CENTER);
-        display_.drawString(x + w / 2, y + 10, s.label);
+
+        display_.drawString(
+            x + w / 2,
+            y + 10,
+            s->label);
 
         display_.setFont(ArialMT_Plain_24);
 
-        String valueStr = formatValue(s.type, s.value) + s.unit;
-        int valueWidth = display_.getStringWidth(valueStr);
+        String valueStr =
+            formatValue(s->type, s->value) + s->unit;
 
-        const int arrowOffset = ScreenConfig::ARROW_OFFSET;
-        const int arrowWidth  = ScreenConfig::ARROW_WIDTH;
-        const int spacing     = ScreenConfig::SPACING;
-        const int rightPad    = ScreenConfig::RIGHT_PAD;
+        int valueWidth =
+            display_.getStringWidth(valueStr);
 
-        int arrowCenterX = x + arrowOffset;
+        const int arrowOffset =
+            ScreenConfig::ARROW_OFFSET;
 
-        int contentLeft  = x + arrowOffset + arrowWidth + spacing;
-        int contentRight = x + w - rightPad;
-        int contentWidth = contentRight - contentLeft;
+        const int arrowWidth =
+            ScreenConfig::ARROW_WIDTH;
 
-        int cy = y + tileH / 2 - 8;
-        int valueStartX = contentLeft + (contentWidth - valueWidth) / 2;
+        const int spacing =
+            ScreenConfig::SPACING;
 
-        if (s.trend != TREND_NONE)
+        const int rightPad =
+            ScreenConfig::RIGHT_PAD;
+
+        int arrowCenterX =
+            x + arrowOffset;
+
+        int contentLeft =
+            x +
+            arrowOffset +
+            arrowWidth +
+            spacing;
+
+        int contentRight =
+            x + w - rightPad;
+
+        int contentWidth =
+            contentRight - contentLeft;
+
+        int cy =
+            y + tileH / 2 - 8;
+
+        int valueStartX =
+            contentLeft +
+            (contentWidth - valueWidth) / 2;
+
+        if (s->trend != TREND_NONE)
         {
             display_.setColor(
-                s.trend == TREND_UP   ? DisplayManager::YELLOW :
-                s.trend == TREND_DOWN ? DisplayManager::BLUE   :
-                                        DisplayManager::WHITE);
+                s->trend == TREND_UP   ? DisplayManager::YELLOW :
+                s->trend == TREND_DOWN ? DisplayManager::BLUE   :
+                                         DisplayManager::WHITE);
 
-            drawTrendArrow(arrowCenterX, cy + 10, s.trend);
+            drawTrendArrow(
+                arrowCenterX,
+                cy + 10,
+                s->trend);
         }
 
         display_.setColor(DisplayManager::WHITE);
         display_.setTextAlignment(DisplayManager::LEFT);
-        display_.drawString(valueStartX, cy, valueStr);
+
+        display_.drawString(
+            valueStartX,
+            cy,
+            valueStr);
 
         display_.setTextAlignment(DisplayManager::CENTER);
         display_.setFont(ArialMT_Plain_10);
         display_.setColor(DisplayManager::BLUE);
 
-        if (!isnan(s.minVal) && !isnan(s.maxVal))
+        if (!isnan(s->minVal) &&
+            !isnan(s->maxVal))
         {
-            String mm = formatValue(s.type, s.minVal) + " / " +
-                        formatValue(s.type, s.maxVal);
-            display_.drawString(x + w / 2, y + tileH - 18, mm);
+            String mm =
+                formatValue(s->type, s->minVal) +
+                " / " +
+                formatValue(s->type, s->maxVal);
+
+            display_.drawString(
+                x + w / 2,
+                y + tileH - 18,
+                mm);
         }
         else
         {
-            display_.drawString(x + w / 2, y + tileH - 18, "-- / --");
+            display_.drawString(
+                x + w / 2,
+                y + tileH - 18,
+                "-- / --");
         }
     }
 }
@@ -322,7 +386,9 @@ void WeatherScreen::drawTrendArrow(int x, int y, TrendDirection t)
     }
 }
 
-String WeatherScreen::formatValue(SensorType type, float v)
+String WeatherScreen::formatValue(
+    SensorType type,
+    float v)
 {
     if (isnan(v))
     {
@@ -333,12 +399,14 @@ String WeatherScreen::formatValue(SensorType type, float v)
     {
         case TEMP:
             return String(v, 1);
+
         case HUMIDITY:
         case PRESSURE:
             return String((int)round(v));
-    }
 
-    return "--";
+        default:
+            return "--";
+    }
 }
 
 DisplayManager::Color WeatherScreen::getColor(SensorType t)
