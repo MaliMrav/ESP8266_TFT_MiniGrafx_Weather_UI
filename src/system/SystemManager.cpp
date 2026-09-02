@@ -11,11 +11,14 @@
 #include "../input/InputManager.h"
 
 #include "../data/IDataSource.h"
+
 #include "../data/ObservationRegistry.h"
 #include "../data/ObservationHandle.h"
 
 #include "../models/SensorRepository.h"
 #include "../models/SensorTile.h"
+
+#include "../models/WeatherObservationKeys.h"
 #include "../models/SolarObservationKeys.h"
 
 #include "../ota/OtaManager.h"
@@ -122,37 +125,181 @@ namespace
 
 
     bool initialiseObservations()
+{
+    ObservationRegistry::initialise();
+    SensorRepository::initialise();
+
+    // -------------------------------------------------------------------------
+    // Weather
+    // -------------------------------------------------------------------------
+
+    const ObservationHandle kitchenTemperature =
+        ObservationRegistry::registerObservation(
+            WeatherObservations::KITCHEN_TEMPERATURE);
+
+    const ObservationHandle pergolaTemperature =
+        ObservationRegistry::registerObservation(
+            WeatherObservations::PERGOLA_TEMPERATURE);
+
+    const ObservationHandle kitchenHumidity =
+        ObservationRegistry::registerObservation(
+            WeatherObservations::KITCHEN_HUMIDITY);
+
+    const ObservationHandle pergolaHumidity =
+        ObservationRegistry::registerObservation(
+            WeatherObservations::PERGOLA_HUMIDITY);
+
+    const ObservationHandle pressure =
+        ObservationRegistry::registerObservation(
+            WeatherObservations::PRESSURE);
+
+    // -------------------------------------------------------------------------
+    // Solar
+    // -------------------------------------------------------------------------
+
+    const ObservationHandle solarCurrentProduction =
+        ObservationRegistry::registerObservation(
+            SolarObservations::CURRENT_POWER_PRODUCTION);
+
+    const ObservationHandle solarTodayProduction =
+        ObservationRegistry::registerObservation(
+            SolarObservations::ENERGY_PRODUCTION_TODAY);
+
+    const ObservationHandle solarCurrentConsumption =
+        ObservationRegistry::registerObservation(
+            SolarObservations::CURRENT_POWER_CONSUMPTION);
+
+    const ObservationHandle solarTodayConsumption =
+        ObservationRegistry::registerObservation(
+            SolarObservations::ENERGY_CONSUMPTION_TODAY);
+
+    // -------------------------------------------------------------------------
+    // Validate registry allocation
+    // -------------------------------------------------------------------------
+
+    if (!kitchenTemperature.isValid() ||
+        !pergolaTemperature.isValid() ||
+        !kitchenHumidity.isValid() ||
+        !pergolaHumidity.isValid() ||
+        !pressure.isValid() ||
+        !solarCurrentProduction.isValid() ||
+        !solarTodayProduction.isValid() ||
+        !solarCurrentConsumption.isValid() ||
+        !solarTodayConsumption.isValid())
     {
-        ObservationRegistry::initialise();
-        SensorRepository::initialise();
+        Serial.println(
+            "[OBSERVATION] Registration failed: registry capacity exceeded");
 
-        const ObservationHandle solarCurrentProduction =
-            ObservationRegistry::registerObservation(
-                SolarObservations::CURRENT_POWER_PRODUCTION);
+        return false;
+    }
 
-        const ObservationHandle solarTodayProduction =
-            ObservationRegistry::registerObservation(
-                SolarObservations::ENERGY_PRODUCTION_TODAY);
+    // -------------------------------------------------------------------------
+    // Bind handles to repository storage
+    // -------------------------------------------------------------------------
 
-        const ObservationHandle solarCurrentConsumption =
-            ObservationRegistry::registerObservation(
-                SolarObservations::CURRENT_POWER_CONSUMPTION);
+    const bool kitchenTemperatureRegistered =
+        SensorRepository::registerObservation(
+            kitchenTemperature,
+            SensorTile{
+                "Kitchen Temp",
+                "°C",
+                TEMP
+            });
 
-        const ObservationHandle solarTodayConsumption =
-            ObservationRegistry::registerObservation(
-                SolarObservations::ENERGY_CONSUMPTION_TODAY);
+    const bool pergolaTemperatureRegistered =
+        SensorRepository::registerObservation(
+            pergolaTemperature,
+            SensorTile{
+                "Pergola Temp",
+                "°C",
+                TEMP
+            });
 
+    const bool kitchenHumidityRegistered =
+        SensorRepository::registerObservation(
+            kitchenHumidity,
+            SensorTile{
+                "Kitchen Hum",
+                "%",
+                HUMIDITY
+            });
 
-        if (!solarCurrentProduction.isValid() ||
-            !solarTodayProduction.isValid() ||
-            !solarCurrentConsumption.isValid() ||
-            !solarTodayConsumption.isValid())
-        {
-            Serial.println(
-                "[OBSERVATION] Registration failed: registry capacity exceeded");
+    const bool pergolaHumidityRegistered =
+        SensorRepository::registerObservation(
+            pergolaHumidity,
+            SensorTile{
+                "Pergola Hum",
+                "%",
+                HUMIDITY
+            });
 
-            return false;
-        }
+    const bool pressureRegistered =
+        SensorRepository::registerObservation(
+            pressure,
+            SensorTile{
+                "Pressure",
+                "hPa",
+                PRESSURE
+            });
+
+    const bool productionRegistered =
+        SensorRepository::registerObservation(
+            solarCurrentProduction,
+            SensorTile{
+                "Production",
+                "W",
+                ENERGY_W
+            });
+
+    const bool productionTodayRegistered =
+        SensorRepository::registerObservation(
+            solarTodayProduction,
+            SensorTile{
+                "Prod Today",
+                "Wh",
+                ENERGY_WH
+            });
+
+    const bool consumptionRegistered =
+        SensorRepository::registerObservation(
+            solarCurrentConsumption,
+            SensorTile{
+                "Consumption",
+                "W",
+                ENERGY_W
+            });
+
+    const bool consumptionTodayRegistered =
+        SensorRepository::registerObservation(
+            solarTodayConsumption,
+            SensorTile{
+                "Cons Today",
+                "Wh",
+                ENERGY_WH
+            });
+
+    // -------------------------------------------------------------------------
+    // Validate repository bindings
+    // -------------------------------------------------------------------------
+
+    if (!kitchenTemperatureRegistered ||
+        !pergolaTemperatureRegistered ||
+        !kitchenHumidityRegistered ||
+        !pergolaHumidityRegistered ||
+        !pressureRegistered ||
+        !productionRegistered ||
+        !productionTodayRegistered ||
+        !consumptionRegistered ||
+        !consumptionTodayRegistered)
+    {
+        Serial.println(
+            "[OBSERVATION] Registration failed: repository capacity exceeded");
+
+        return false;
+    }
+
+    return true;
+}
 
 
         const bool productionRegistered =

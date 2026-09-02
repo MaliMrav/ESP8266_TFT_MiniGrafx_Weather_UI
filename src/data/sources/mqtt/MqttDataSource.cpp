@@ -5,7 +5,6 @@
 
 #include "../../../config/config.h"
 #include "../../../data/ObservationRegistry.h"
-#include "../../../data/ObservationHandle.h"
 #include "../../../models/SensorRepository.h"
 
 #include "TopicMappings.h"
@@ -51,18 +50,26 @@ static void onMessage(
     byte* payload,
     unsigned int length)
 {
-    const String topicStr = String(topic);
+    const String topicStr =
+        String(topic);
 
     String payloadStr;
-    payloadStr.reserve(length + 1);
 
-    for (unsigned int i = 0; i < length; ++i)
+    payloadStr.reserve(
+        length + 1);
+
+    for (unsigned int i = 0;
+         i < length;
+         ++i)
     {
-        payloadStr += static_cast<char>(payload[i]);
+        payloadStr +=
+            static_cast<char>(payload[i]);
     }
 
 
-    for (uint8_t i = 0; i < TOPIC_COUNT; ++i)
+    for (uint8_t i = 0;
+         i < TOPIC_COUNT;
+         ++i)
     {
         const TopicMapping& mapping =
             topicMappings[i];
@@ -129,7 +136,9 @@ static bool reconnect()
     }
 
 
-    for (uint8_t i = 0; i < TOPIC_COUNT; ++i)
+    for (uint8_t i = 0;
+         i < TOPIC_COUNT;
+         ++i)
     {
         mqttClient.subscribe(
             topicMappings[i].topic);
@@ -146,14 +155,13 @@ void MqttDataSource::begin()
         MQTT::SERVER,
         MQTT::PORT);
 
-    mqttClient.setCallback(onMessage);
+    mqttClient.setCallback(
+        onMessage);
 
     mqttClient.setKeepAlive(
         MQTT::KEEPALIVE);
 
-
     mqttWasConnected = false;
-
 
     mqttClientId =
         String("telemetry-") +
@@ -212,8 +220,5 @@ void MqttDataSource::loop()
     if (reconnect())
     {
         lastReconnectAttempt = 0;
-
-        // The state transition will be reported
-        // exactly once on the next loop iteration.
     }
 }

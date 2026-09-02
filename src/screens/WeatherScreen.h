@@ -20,6 +20,13 @@
 #include "../display/DisplayManager.h"
 #include "../ui/Screen.h"
 #include "../input/InputEvent.h"
+#include "../data/ObservationHandle.h"
+
+ObservationHandle kitchenTemperatureHandle_;
+ObservationHandle pergolaTemperatureHandle_;
+ObservationHandle kitchenHumidityHandle_;
+ObservationHandle pergolaHumidityHandle_;
+ObservationHandle pressureHandle_;
 
 class WeatherScreen : public Screen
 {

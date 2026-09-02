@@ -52,13 +52,4 @@ namespace SensorRepository
     bool setMin  (ObservationHandle handle, float value);
     bool setMax  (ObservationHandle handle, float value);
     bool setTrend(ObservationHandle handle, TrendDirection trend);
-
-    // -------------------------------------------------------------------------
-    // Legacy ID-based API retained during the Zeta migration.
-    // -------------------------------------------------------------------------
-    SensorTile& getTile(uint8_t id);
-    void setValue(uint8_t id, float value);
-    void setMin  (uint8_t id, float value);
-    void setMax  (uint8_t id, float value);
-    void setTrend(uint8_t id, TrendDirection trend);
 }

@@ -1,8 +1,12 @@
 #include "WeatherScreen.h"
 
 #include "../display/DisplayManager.h"
+
+#include "../data/ObservationRegistry.h"
+
+#include "../models/WeatherObservationKeys.h"
 #include "../models/SensorRepository.h"
-#include "../models/WeatherSensorIds.h"
+
 #include "../config/config.h"
 #include "../system/DebugOverlay.h"
 #include "ScreenConfig.h"
@@ -16,6 +20,25 @@ WeatherScreen::WeatherScreen(DisplayManager& display)
 
 void WeatherScreen::enter()
 {
+    kitchenTemperatureHandle_ =
+        ObservationRegistry::resolve(
+            WeatherObservations::KITCHEN_TEMPERATURE);
+
+    pergolaTemperatureHandle_ =
+        ObservationRegistry::resolve(
+            WeatherObservations::PERGOLA_TEMPERATURE);
+
+    kitchenHumidityHandle_ =
+        ObservationRegistry::resolve(
+            WeatherObservations::KITCHEN_HUMIDITY);
+
+    pergolaHumidityHandle_ =
+        ObservationRegistry::resolve(
+            WeatherObservations::PERGOLA_HUMIDITY);
+
+    pressureHandle_ =
+        ObservationRegistry::resolve(
+            WeatherObservations::PRESSURE);
 }
 
 void WeatherScreen::leave()
@@ -166,13 +189,13 @@ void WeatherScreen::drawWifiQuality()
 
 void WeatherScreen::drawSensorGrid()
 {
-    static const uint8_t ids[WEATHER_SENSOR_COUNT] = {
-        SENSOR_KITCHEN_TEMP,
-        SENSOR_PERGOLA_TEMP,
-        SENSOR_KITCHEN_HUM,
-        SENSOR_PERGOLA_HUM,
-        SENSOR_PRESSURE
-    };
+    const ObservationHandle handles[WEATHER_SENSOR_COUNT] = {
+        kitchenTemperatureHandle_,
+        pergolaTemperatureHandle_,
+        kitchenHumidityHandle_,
+        pergolaHumidityHandle_,
+        pressureHandle_
+};
     uint8_t sensorCount = WEATHER_SENSOR_COUNT;
 
     const int margin = ScreenConfig::SIDE_MARGIN;
@@ -202,8 +225,14 @@ void WeatherScreen::drawSensorGrid()
         int w = full ? display_.getWidth() - (2 * margin) : tileW;
         int y = topY + row * (tileH + gap);
 
-        SensorTile& s = SensorRepository::getTile(ids[i]);
+        SensorTile* s =
+            SensorRepository::getTile(handles[i]);
 
+        if (!s)
+        {
+            continue;
+        }
+        
         display_.setColor(DisplayManager::WHITE);
         display_.drawRect(x, y, w, tileH);
 

@@ -13,12 +13,13 @@
 // MqttDataSource resolves the ObservationKey through ObservationRegistry
 // before writing to SensorRepository.
 //
-// TopicMapping therefore knows about:
+// This boundary deliberately knows about:
 //     - MQTT transport
 //     - semantic observation identity
 //
 // It does not know about:
-//     - repository storage slots
+//     - repository storage
+//     - storage slots
 //     - ObservationHandle representation
 //     - screen implementation
 

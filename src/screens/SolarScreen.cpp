@@ -20,7 +20,38 @@ namespace
 SolarScreen::SolarScreen(DisplayManager& display)
     : display_(display) {}
 
-void SolarScreen::enter() {}
+void SolarScreen::enter()
+{
+    currentProductionHandle_ =
+        ObservationRegistry::resolve(
+            SolarObservations::CURRENT_POWER_PRODUCTION);
+
+    currentConsumptionHandle_ =
+        ObservationRegistry::resolve(
+            SolarObservations::CURRENT_POWER_CONSUMPTION);
+
+    todayProductionHandle_ =
+        ObservationRegistry::resolve(
+            SolarObservations::ENERGY_PRODUCTION_TODAY);
+
+    todayConsumptionHandle_ =
+        ObservationRegistry::resolve(
+            SolarObservations::ENERGY_CONSUMPTION_TODAY);
+
+    // No semantic observations exist for these yet.
+    currentExportHandle_ =
+        ObservationHandle{};
+
+    currentBatteryHandle_ =
+        ObservationHandle{};
+
+    todayExportHandle_ =
+        ObservationHandle{};
+
+    todayBatteryHandle_ =
+        ObservationHandle{};
+}
+
 void SolarScreen::leave() {}
 
 void SolarScreen::update()
@@ -79,20 +110,18 @@ void SolarScreen::drawGrid()
     const int rowH =
         (display_.getHeight() - gridTop - ((ROWS - 1) * GAP)) / ROWS;
 
-    // Each list is explicit. Sensor identity is not derived from position
-    // in SensorRepository; these are the domain-owned IDs for this screen.
-    const uint8_t leftIds[ROWS] = {
-        SENSOR_SOLAR_POWER_NOW,
-        SENSOR_CONSUMPTION_POWER_NOW,
-        SENSOR_EXPORT_POWER_NOW,
-        SENSOR_BATTERY_POWER_NOW
+    const ObservationHandle leftHandles[ROWS] = {
+        currentProductionHandle_,
+        currentConsumptionHandle_,
+        currentExportHandle_,
+        currentBatteryHandle_
     };
 
-    const uint8_t rightIds[ROWS] = {
-        SENSOR_SOLAR_ENERGY_TODAY,
-        SENSOR_CONSUMPTION_ENERGY_TODAY,
-        SENSOR_EXPORT_ENERGY_TODAY,
-        SENSOR_BATTERY_ENERGY_TODAY
+    const ObservationHandle rightHandles[ROWS] = {
+        todayProductionHandle_,
+        todayConsumptionHandle_,
+        todayExportHandle_,
+        todayBatteryHandle_
     };
 
     const char* rowLabels[ROWS] = {
@@ -112,7 +141,7 @@ void SolarScreen::drawGrid()
             colW,
             rowH,
             rowLabels[row],
-            leftIds[row]);
+            leftHandles[row]);
 
         drawQuadrant(
             MARGIN + colW + GAP,
@@ -120,7 +149,7 @@ void SolarScreen::drawGrid()
             colW,
             rowH,
             rowLabels[row],
-            rightIds[row]);
+            rightHandles[row]);
     }
 }
 
@@ -130,9 +159,10 @@ void SolarScreen::drawQuadrant(
     int w,
     int h,
     const char* label,
-    uint8_t id)
+    ObservationHandle handle)
 {
-    const SensorTile& tile = SensorRepository::getTile(id);
+    const SensorTile* tile =
+        SensorRepository::getTile(handle);
 
     display_.setColor(DisplayManager::WHITE);
     display_.drawRect(x, y, w, h);
@@ -146,7 +176,11 @@ void SolarScreen::drawQuadrant(
     display_.setColor(DisplayManager::WHITE);
     display_.setTextAlignment(DisplayManager::CENTER);
 
-    const String val = tile.valid ? formatPower(tile.value) : "--";
+    const String val =
+        tile && tile->valid
+            ? formatPower(tile->value)
+            : "--";
+
     display_.drawString(x + w / 2, y + h / 2 - 7, val);
 }
 

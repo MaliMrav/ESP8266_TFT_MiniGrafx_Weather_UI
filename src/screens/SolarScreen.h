@@ -19,7 +19,21 @@
 #include "../display/DisplayManager.h"
 #include "../ui/Screen.h"
 #include "../input/InputEvent.h"
+
+#include "../data/ObservationHandle.h"
 #include "../models/SolarObservationKeys.h"
+
+ObservationHandle currentProductionHandle_;
+ObservationHandle currentConsumptionHandle_;
+
+ObservationHandle currentExportHandle_;
+ObservationHandle currentBatteryHandle_;
+
+ObservationHandle todayProductionHandle_;
+ObservationHandle todayConsumptionHandle_;
+
+ObservationHandle todayExportHandle_;
+ObservationHandle todayBatteryHandle_;
 
 class SolarScreen : public Screen
 {

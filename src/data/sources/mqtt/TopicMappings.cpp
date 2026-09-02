@@ -2,9 +2,9 @@
 
 const TopicMapping topicMappings[] = {
 
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Weather — Kitchen
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     {
         Topics::Kitchen::Temp::value,
@@ -30,7 +30,6 @@ const TopicMapping topicMappings[] = {
         TopicMapping::TREND
     },
 
-
     {
         Topics::Kitchen::Hum::value,
         WeatherObservations::KITCHEN_HUMIDITY,
@@ -55,35 +54,9 @@ const TopicMapping topicMappings[] = {
         TopicMapping::TREND
     },
 
-
-    {
-        Topics::Kitchen::Pressure::value,
-        WeatherObservations::PRESSURE,
-        TopicMapping::VALUE
-    },
-
-    {
-        Topics::Kitchen::Pressure::min,
-        WeatherObservations::PRESSURE,
-        TopicMapping::MIN
-    },
-
-    {
-        Topics::Kitchen::Pressure::max,
-        WeatherObservations::PRESSURE,
-        TopicMapping::MAX
-    },
-
-    {
-        Topics::Kitchen::Pressure::trend,
-        WeatherObservations::PRESSURE,
-        TopicMapping::TREND
-    },
-
-
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Weather — Pergola
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     {
         Topics::Pergola::Temp::value,
@@ -109,7 +82,6 @@ const TopicMapping topicMappings[] = {
         TopicMapping::TREND
     },
 
-
     {
         Topics::Pergola::Hum::value,
         WeatherObservations::PERGOLA_HUMIDITY,
@@ -133,7 +105,6 @@ const TopicMapping topicMappings[] = {
         WeatherObservations::PERGOLA_HUMIDITY,
         TopicMapping::TREND
     },
-
 
     {
         Topics::Pergola::Pressure::value,
@@ -159,14 +130,9 @@ const TopicMapping topicMappings[] = {
         TopicMapping::TREND
     },
 
-
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Solar — current power
-    //
-    // Export and battery remain placeholders. No semantic observations
-    // have been declared for them yet because their future source is
-    // expected to be AlphaESS rather than Envoy.
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     {
         Topics::Solar::Power::production,
@@ -180,10 +146,9 @@ const TopicMapping topicMappings[] = {
         TopicMapping::VALUE
     },
 
-
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Solar — today's accumulated energy
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     {
         Topics::Solar::Today::production,
