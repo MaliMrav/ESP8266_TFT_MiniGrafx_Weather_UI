@@ -1,6 +1,7 @@
 #include "SolarScreen.h"
 
 #include "../display/DisplayManager.h"
+#include "../data/ObservationRegistry.h"
 #include "../models/SensorRepository.h"
 #include "../input/InputAction.h"
 #include "../ui/ScreenIntent.h"

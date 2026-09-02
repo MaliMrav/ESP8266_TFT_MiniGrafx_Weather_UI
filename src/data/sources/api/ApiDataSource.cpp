@@ -3,11 +3,13 @@
 #include "../../../config/config.h"
 #include "ApiMappings.h"
 
+#include "../../../data/ObservationRegistry.h"
+#include "../../../models/SensorRepository.h"
+#include "../../../models/SolarObservationKeys.h"
+
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include "../../../models/SensorRepository.h"
-// #include "../../../models/SolarObservationKeys.h"
 
 static String authHeader()
 {
@@ -22,7 +24,9 @@ void ApiDataSource::begin()
 void ApiDataSource::loop()
 {
     if (millis() - lastPoll_ < ApiConfig::POLL_MS)
+    {
         return;
+    }
 
     lastPoll_ = millis();
 
@@ -44,6 +48,7 @@ void ApiDataSource::fetchRealtime()
     client.setInsecure();
 
     HTTPClient http;
+
     String url =
         String("https://") +
         ApiConfig::HOST +
@@ -67,6 +72,7 @@ void ApiDataSource::fetchRealtime()
     }
 
     StaticJsonDocument<2048> doc;
+
     DeserializationError err =
         deserializeJson(doc, http.getStream());
 
@@ -77,6 +83,7 @@ void ApiDataSource::fetchRealtime()
         Serial.printf(
             "[API] realtime JSON error: %s\n",
             err.c_str());
+
         return;
     }
 
@@ -90,14 +97,39 @@ void ApiDataSource::fetchRealtime()
            [ApiMappings::ACTIVE_POWER_FIELD]
            | 0.0f;
 
+    const ObservationHandle productionHandle =
+        ObservationRegistry::resolve(
+            SolarObservations::CURRENT_POWER_PRODUCTION);
+
+    if (!productionHandle.isValid())
+    {
+        Serial.println(
+            "[API] Solar production observation is not registered");
+
+        return;
+    }
+
     SensorRepository::setValue(
-        SENSOR_SOLAR_POWER_NOW,
+        productionHandle,
         production);
 
     // The current API exposes net grid import as the second meter.
     // Household consumption is derived as production + net import.
+
+    const ObservationHandle consumptionHandle =
+        ObservationRegistry::resolve(
+            SolarObservations::CURRENT_POWER_CONSUMPTION);
+
+    if (!consumptionHandle.isValid())
+    {
+        Serial.println(
+            "[API] Solar consumption observation is not registered");
+
+        return;
+    }
+
     SensorRepository::setValue(
-        SENSOR_CONSUMPTION_POWER_NOW,
+        consumptionHandle,
         production + grid);
 
     // Export and battery are intentionally not populated here until the
@@ -110,6 +142,7 @@ void ApiDataSource::fetchDailyTotals()
     client.setInsecure();
 
     HTTPClient http;
+
     String url =
         String("https://") +
         ApiConfig::HOST +
@@ -133,6 +166,7 @@ void ApiDataSource::fetchDailyTotals()
     }
 
     StaticJsonDocument<512> doc;
+
     DeserializationError err =
         deserializeJson(doc, http.getStream());
 
@@ -143,21 +177,46 @@ void ApiDataSource::fetchDailyTotals()
         Serial.printf(
             "[API] daily totals JSON error: %s\n",
             err.c_str());
+
         return;
     }
 
     if (doc["production"]["wattHoursToday"].is<float>())
     {
-        SensorRepository::setValue(
-            SENSOR_SOLAR_ENERGY_TODAY,
-            doc["production"]["wattHoursToday"].as<float>());
+        const ObservationHandle productionHandle =
+            ObservationRegistry::resolve(
+                SolarObservations::ENERGY_PRODUCTION_TODAY);
+
+        if (!productionHandle.isValid())
+        {
+            Serial.println(
+                "[API] Solar production-today observation is not registered");
+        }
+        else
+        {
+            SensorRepository::setValue(
+                productionHandle,
+                doc["production"]["wattHoursToday"].as<float>());
+        }
     }
 
     if (doc["consumption"]["wattHoursToday"].is<float>())
     {
-        SensorRepository::setValue(
-            SENSOR_CONSUMPTION_ENERGY_TODAY,
-            doc["consumption"]["wattHoursToday"].as<float>());
+        const ObservationHandle consumptionHandle =
+            ObservationRegistry::resolve(
+                SolarObservations::ENERGY_CONSUMPTION_TODAY);
+
+        if (!consumptionHandle.isValid())
+        {
+            Serial.println(
+                "[API] Solar consumption-today observation is not registered");
+        }
+        else
+        {
+            SensorRepository::setValue(
+                consumptionHandle,
+                doc["consumption"]["wattHoursToday"].as<float>());
+        }
     }
 
     // Export and battery are intentionally not populated here until the
