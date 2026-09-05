@@ -1,0 +1,56 @@
+observations:
+
+  current_power_production:
+    key: sensor.envoy_current_power_production
+    type: power
+    unit: W
+
+    source:
+      type: mqtt
+      topic: ha/envoy/current_power_production
+
+  current_power_consumption:
+    key: sensor.envoy_current_power_consumption
+    type: power
+    unit: W
+
+    source:
+      type: mqtt
+      topic: ha/envoy/current_power_consumption
+
+  energy_production_today:
+    key: sensor.envoy_energy_production_today
+    type: energy
+    unit: Wh
+
+    source:
+      type: mqtt
+      topic: ha/envoy/energy_production_today
+
+  energy_consumption_today:
+    key: sensor.envoy_energy_consumption_today
+    type: energy
+    unit: Wh
+
+    source:
+      type: mqtt
+      topic: ha/envoy/energy_consumption_today
+
+  energy_production_lifetime:
+    key: sensor.envoy_lifetime_energy_production
+    type: energy
+    unit: Wh
+
+    source:
+      type: mqtt
+      topic: ha/envoy/lifetime_energy_production
+
+  energy_consumption_lifetime:
+    key: sensor.envoy_lifetime_energy_consumption
+    type: energy
+    unit: Wh
+
+    source:
+      type: mqtt
+      topic: ha/envoy/lifetime_energy_consumption
+
