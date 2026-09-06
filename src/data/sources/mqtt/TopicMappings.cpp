@@ -136,13 +136,13 @@ const TopicMapping topicMappings[] = {
 
     {
         Topics::Solar::Current::production,
-        SolarObservations::CURRENT_POWER_PRODUCTION,
+        EnergyObservations::CURRENT_POWER_PRODUCTION,
         TopicMapping::VALUE
     },
 
     {
         Topics::Solar::Current::consumption,
-        SolarObservations::CURRENT_POWER_CONSUMPTION,
+        EnergyObservations::CURRENT_POWER_CONSUMPTION,
         TopicMapping::VALUE
     },
 
@@ -152,13 +152,13 @@ const TopicMapping topicMappings[] = {
 
     {
         Topics::Solar::Today::production,
-        SolarObservations::ENERGY_PRODUCTION_TODAY,
+        EnergyObservations::ENERGY_PRODUCTION_TODAY,
         TopicMapping::VALUE
     },
 
     {
         Topics::Solar::Today::consumption,
-        SolarObservations::ENERGY_CONSUMPTION_TODAY,
+        EnergyObservations::ENERGY_CONSUMPTION_TODAY,
         TopicMapping::VALUE
     }
     /*
@@ -168,13 +168,13 @@ const TopicMapping topicMappings[] = {
 
     {
         Topics::Solar::Lifetime::production,
-        SolarObservations::ENERGY_PRODUCTION_LIFETIME,
+        EnergyObservations::ENERGY_PRODUCTION_LIFETIME,
         TopicMapping::VALUE
     },
 
     {
         Topics::Solar::Lifetime::consumption,
-        SolarObservations::ENERGY_CONSUMPTION_LIFETIME,
+        EnergyObservations::ENERGY_CONSUMPTION_LIFETIME,
         TopicMapping::VALUE
     }
     */

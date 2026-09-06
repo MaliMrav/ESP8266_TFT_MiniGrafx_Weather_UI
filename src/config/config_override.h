@@ -220,5 +220,5 @@
 // Uncomment to enable:
 // #define DEBUG_OVERLAY
 
-// Uncomment to enable Envoy HTTP diagnostic overlay on SolarScreen:
+// Uncomment to enable Envoy HTTP diagnostic overlay on EnergyStatusScreen:
 #define ENVOY_DEBUG

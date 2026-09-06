@@ -11,7 +11,7 @@
 #include "screens/CalibrationScreen.h"
 #include "screens/control/ControlPanelScreen.h"
 #include "screens/WeatherScreen.h"
-#include "screens/SolarScreen.h"
+#include "screens/EnergyStatusScreen.h"
 
 #include "ui/ScreenManager.h"
 
@@ -38,7 +38,7 @@ ScreenManager screenManager;
 
 BootScreen bootScreen(display);
 WeatherScreen weatherScreen(display);
-SolarScreen solarScreen(display);
+EnergyStatusScreen EnergyStatusScreen(display);
 CalibrationScreen calibrationScreen(
     display,
     touchController);
@@ -68,7 +68,7 @@ void setup()
         screenManager,
         bootScreen,
         weatherScreen,
-        solarScreen,
+        EnergyStatusScreen,
         calibrationScreen,
         controlPanelScreen,
         ota,

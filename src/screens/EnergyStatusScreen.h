@@ -1,6 +1,6 @@
 #pragma once
 
-// SolarScreen displays current and today's solar-energy measurements.
+// EnergyStatusScreen displays current and today's solar-energy measurements.
 //
 // Left column  — instantaneous power (W):
 //   Production, Consumption, Export, Battery
@@ -8,7 +8,7 @@
 // Right column — today's accumulated energy (Wh):
 //   Production, Consumption, Export, Battery
 //
-// Data is sourced from SensorRepository only. SolarScreen has no knowledge
+// Data is sourced from SensorRepository only. EnergyStatusScreen has no knowledge
 // of MQTT, Home Assistant, Envoy, or any other data transport.
 //
 // Input handling:
@@ -22,10 +22,10 @@
 #include "../input/InputEvent.h"
 #include "../data/ObservationHandle.h"
 
-class SolarScreen : public Screen
+class EnergyStatusScreen : public Screen
 {
 public:
-    explicit SolarScreen(DisplayManager& display);
+    explicit EnergyStatusScreen(DisplayManager& display);
 
     void enter()  override;
     void leave()  override;

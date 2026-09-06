@@ -7,7 +7,7 @@
 //
 // This file describes the structure of the configured API only.
 // Semantic observation identity belongs to the domain-owned
-// SolarObservationKeys.h.
+// EnergyObservationKeys.h.
 //
 // A different API provider can replace this mapping without changing:
 //     - SensorRepository

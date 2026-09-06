@@ -20,7 +20,7 @@ class TouchManager;
 class ScreenManager;
 class BootScreen;
 class WeatherScreen;
-class SolarScreen;
+class EnergyStatusScreen;
 class CalibrationScreen;
 class ControlPanelScreen;
 class OtaManager;
@@ -38,7 +38,7 @@ namespace SystemManager
         ScreenManager&      screenManager,
         BootScreen&         bootScreen,
         WeatherScreen&      weatherScreen,
-        SolarScreen&        solarScreen,
+        EnergyStatusScreen&        EnergyStatusScreen,
         CalibrationScreen&  calibrationScreen,
         ControlPanelScreen& controlPanelScreen,
         OtaManager&         ota,

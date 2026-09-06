@@ -19,14 +19,14 @@
 #include "../models/SensorTile.h"
 
 #include "../models/WeatherObservationKeys.h"
-#include "../models/SolarObservationKeys.h"
+#include "../models/EnergyObservationKeys.h"
 
 #include "../ota/OtaManager.h"
 
 #include "../screens/BootScreen.h"
 #include "../screens/CalibrationScreen.h"
 #include "../screens/WeatherScreen.h"
-#include "../screens/SolarScreen.h"
+#include "../screens/EnergyStatusScreen.h"
 #include "../screens/control/ControlPanelScreen.h"
 
 #include "../system/StatusCallback.h"
@@ -48,7 +48,7 @@ namespace
 
     BootScreen* s_bootScreen = nullptr;
     WeatherScreen* s_weatherScreen = nullptr;
-    SolarScreen* s_solarScreen = nullptr;
+    EnergyStatusScreen* s_EnergyStatusScreen = nullptr;
     CalibrationScreen* s_calibrationScreen = nullptr;
     ControlPanelScreen* s_controlPanelScreen = nullptr;
 
@@ -159,19 +159,19 @@ namespace
 
     const ObservationHandle solarCurrentProduction =
         ObservationRegistry::registerObservation(
-            SolarObservations::CURRENT_POWER_PRODUCTION);
+            EnergyObservations::CURRENT_POWER_PRODUCTION);
 
     const ObservationHandle solarTodayProduction =
         ObservationRegistry::registerObservation(
-            SolarObservations::ENERGY_PRODUCTION_TODAY);
+            EnergyObservations::ENERGY_PRODUCTION_TODAY);
 
     const ObservationHandle solarCurrentConsumption =
         ObservationRegistry::registerObservation(
-            SolarObservations::CURRENT_POWER_CONSUMPTION);
+            EnergyObservations::CURRENT_POWER_CONSUMPTION);
 
     const ObservationHandle solarTodayConsumption =
         ObservationRegistry::registerObservation(
-            SolarObservations::ENERGY_CONSUMPTION_TODAY);
+            EnergyObservations::ENERGY_CONSUMPTION_TODAY);
 
     // -------------------------------------------------------------------------
     // Validate registry allocation
@@ -548,7 +548,7 @@ namespace SystemManager
         ScreenManager&      screenManager,
         BootScreen&         bootScreen,
         WeatherScreen&      weatherScreen,
-        SolarScreen&        solarScreen,
+        EnergyStatusScreen&        EnergyStatusScreen,
         CalibrationScreen&  calibrationScreen,
         ControlPanelScreen& controlPanelScreen,
         OtaManager&         ota,
@@ -561,7 +561,7 @@ namespace SystemManager
 
         s_bootScreen = &bootScreen;
         s_weatherScreen = &weatherScreen;
-        s_solarScreen = &solarScreen;
+        s_EnergyStatusScreen = &EnergyStatusScreen;
         s_calibrationScreen = &calibrationScreen;
         s_controlPanelScreen = &controlPanelScreen;
 
@@ -577,7 +577,7 @@ namespace SystemManager
             s_weatherScreen);
 
         s_screenManager->registerScreen(
-            s_solarScreen);
+            s_EnergyStatusScreen);
 
         s_screenManager->registerScreen(
             s_calibrationScreen);

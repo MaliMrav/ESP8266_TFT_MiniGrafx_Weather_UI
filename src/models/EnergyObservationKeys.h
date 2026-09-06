@@ -2,7 +2,7 @@
 
 #include "../data/ObservationKey.h"
 
-// SolarObservationKeys defines the semantic observation identities owned by
+// EnergyObservationKeys defines the semantic observation identities owned by
 // the solar / energy domain.
 //
 // The names deliberately match the Home Assistant entity IDs already in use.
@@ -16,7 +16,7 @@
 //
 // The transport is independent of the observation identity.
 
-namespace SolarObservations
+namespace EnergyObservations
 {
     constexpr ObservationKey CURRENT_POWER_PRODUCTION{
         "sensor.envoy_current_power_production"

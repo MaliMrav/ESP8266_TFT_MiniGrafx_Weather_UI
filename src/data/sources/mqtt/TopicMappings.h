@@ -4,7 +4,7 @@
 
 #include "../../../data/ObservationKey.h"
 #include "../../../models/WeatherObservationKeys.h"
-#include "../../../models/SolarObservationKeys.h"
+#include "../../../models/EnergyObservationKeys.h"
 
 #include "Topics.h"
 

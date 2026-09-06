@@ -229,7 +229,7 @@ WeatherScreen
 ScreenManager
      │
      ▼
-SolarScreen / ControlPanelScreen
+EnergyStatusScreen / ControlPanelScreen
 ```
 
 and:

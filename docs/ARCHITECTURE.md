@@ -219,7 +219,7 @@ A Screen may consume observations from several independent mechanisms at the sam
                             │
                   ┌─────────┴─────────┐
                   ▼                   ▼
-             WeatherScreen        SolarScreen
+             WeatherScreen        EnergyStatusScreen
 ```
 
 The same model scales to a smart wall panel:

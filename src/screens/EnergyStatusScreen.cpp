@@ -1,9 +1,9 @@
-#include "SolarScreen.h"
+#include "EnergyStatusScreen.h"
 
 #include "../display/DisplayManager.h"
 #include "../models/SensorRepository.h"
 #include "../data/ObservationRegistry.h"
-#include "../models/SolarObservationKeys.h"
+#include "../models/EnergyObservationKeys.h"
 #include "../input/InputAction.h"
 #include "../ui/ScreenIntent.h"
 #include "../ui/ScreenKind.h"
@@ -19,26 +19,26 @@ namespace
     constexpr int ROWS     = 4;
 }
 
-SolarScreen::SolarScreen(DisplayManager& display)
+EnergyStatusScreen::EnergyStatusScreen(DisplayManager& display)
     : display_(display) {}
 
-void SolarScreen::enter()
+void EnergyStatusScreen::enter()
 {
     currentProductionHandle_ =
         ObservationRegistry::resolve(
-            SolarObservations::CURRENT_POWER_PRODUCTION);
+            EnergyObservations::CURRENT_POWER_PRODUCTION);
 
     currentConsumptionHandle_ =
         ObservationRegistry::resolve(
-            SolarObservations::CURRENT_POWER_CONSUMPTION);
+            EnergyObservations::CURRENT_POWER_CONSUMPTION);
 
     todayProductionHandle_ =
         ObservationRegistry::resolve(
-            SolarObservations::ENERGY_PRODUCTION_TODAY);
+            EnergyObservations::ENERGY_PRODUCTION_TODAY);
 
     todayConsumptionHandle_ =
         ObservationRegistry::resolve(
-            SolarObservations::ENERGY_CONSUMPTION_TODAY);
+            EnergyObservations::ENERGY_CONSUMPTION_TODAY);
 
     // No semantic observations exist for these yet.
     currentExportHandle_ =
@@ -54,11 +54,11 @@ void SolarScreen::enter()
         ObservationHandle{};
 }
 
-void SolarScreen::leave()
+void EnergyStatusScreen::leave()
 {
 }
 
-void SolarScreen::update()
+void EnergyStatusScreen::update()
 {
     display_.clear(DisplayManager::BLACK);
     drawHeader();
@@ -66,7 +66,7 @@ void SolarScreen::update()
     display_.commit();
 }
 
-ScreenIntent SolarScreen::onInput(const InputEvent& event)
+ScreenIntent EnergyStatusScreen::onInput(const InputEvent& event)
 {
     switch (event.action)
     {
@@ -83,12 +83,12 @@ ScreenIntent SolarScreen::onInput(const InputEvent& event)
     return ScreenIntent();
 }
 
-void SolarScreen::drawHeader()
+void EnergyStatusScreen::drawHeader()
 {
     display_.setFont(ArialRoundedMTBold_14);
     display_.setTextAlignment(DisplayManager::CENTER);
     display_.setColor(DisplayManager::WHITE);
-    display_.drawString(display_.getWidth() / 2, 3, "Solar Energy");
+    display_.drawString(display_.getWidth() / 2, 3, "Energy Status");
 
     const int colW =
         (display_.getWidth() - (2 * MARGIN) - GAP) / COLS;
@@ -107,7 +107,7 @@ void SolarScreen::drawHeader()
         "Today (Wh)");
 }
 
-void SolarScreen::drawGrid()
+void EnergyStatusScreen::drawGrid()
 {
     const int gridTop = HEADER_H + GAP;
 
@@ -163,7 +163,7 @@ void SolarScreen::drawGrid()
     }
 }
 
-void SolarScreen::drawQuadrant(
+void EnergyStatusScreen::drawQuadrant(
     int x,
     int y,
     int w,
@@ -200,7 +200,7 @@ void SolarScreen::drawQuadrant(
         val);
 }
 
-String SolarScreen::formatPower(float v) const
+String EnergyStatusScreen::formatPower(float v) const
 {
     if (isnan(v))
     {

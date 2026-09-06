@@ -5,7 +5,7 @@
 
 #include "../../../data/ObservationRegistry.h"
 #include "../../../models/SensorRepository.h"
-#include "../../../models/SolarObservationKeys.h"
+#include "../../../models/EnergyObservationKeys.h"
 
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
@@ -99,7 +99,7 @@ void ApiDataSource::fetchRealtime()
 
     const ObservationHandle productionHandle =
         ObservationRegistry::resolve(
-            SolarObservations::CURRENT_POWER_PRODUCTION);
+            EnergyObservations::CURRENT_POWER_PRODUCTION);
 
     if (!productionHandle.isValid())
     {
@@ -118,7 +118,7 @@ void ApiDataSource::fetchRealtime()
 
     const ObservationHandle consumptionHandle =
         ObservationRegistry::resolve(
-            SolarObservations::CURRENT_POWER_CONSUMPTION);
+            EnergyObservations::CURRENT_POWER_CONSUMPTION);
 
     if (!consumptionHandle.isValid())
     {
@@ -185,7 +185,7 @@ void ApiDataSource::fetchDailyTotals()
     {
         const ObservationHandle productionHandle =
             ObservationRegistry::resolve(
-                SolarObservations::ENERGY_PRODUCTION_TODAY);
+                EnergyObservations::ENERGY_PRODUCTION_TODAY);
 
         if (!productionHandle.isValid())
         {
@@ -204,7 +204,7 @@ void ApiDataSource::fetchDailyTotals()
     {
         const ObservationHandle consumptionHandle =
             ObservationRegistry::resolve(
-                SolarObservations::ENERGY_CONSUMPTION_TODAY);
+                EnergyObservations::ENERGY_CONSUMPTION_TODAY);
 
         if (!consumptionHandle.isValid())
         {
